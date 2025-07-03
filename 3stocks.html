@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dynamic Stock Screener</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-top: 2rem;
+    }
+    th, td {
+      padding: 1rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #343a40;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📉 Stocks Under $5 with Strong Buy Ratings</h1>
+<p style="text-align: center;">Real-time API-powered screener (via Finnhub)</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th>Price</th>
+      <th>Recommendation</th>
+      <th>Potential</th>
+    </tr>
+  </thead>
+  <tbody id="stock-table">
+    <tr><td colspan="4">Loading...</td></tr>
+  </tbody>
+</table>
+
+<script>
+  const tickers = ['SIRI', 'ZOM', 'GTE', 'NOK', 'OGI']; // Sample low-priced stocks
+  const apiKey = 'd0r78bpr01qn4tjgtgpgd0r78bpr01qn4tjgtgq0'; // Replace this with your real API key
+  const tableBody = document.getElementById('stock-table');
+
+  async function fetchStockData(ticker) {
+    try {
+      const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+      const ratingRes = await fetch(`https://finnhub.io/api/v1/stock/recommendation?symbol=${ticker}&token=${apiKey}`);
+
+      const quote = await quoteRes.json();
+      const ratings = await ratingRes.json();
+
+      if (quote.c < 5 && ratings.length > 0 && ratings[0].strongBuy > 0) {
+        return {
+          ticker,
+          price: quote.c.toFixed(2),
+          recommendation: 'Strong Buy',
+          potential: (quote.pc && quote.c < quote.pc) ? 'High' : 'Moderate'
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching data for ${ticker}`, error);
+    }
+    return null;
+  }
+
+  async function loadStocks() {
+    const results = await Promise.all(tickers.map(fetchStockData));
+    const filtered = results.filter(stock => stock !== null);
+
+    tableBody.innerHTML = filtered.length === 0
+      ? '<tr><td colspan="4">No qualifying stocks found.</td></tr>'
+      : filtered.map(stock => `
+        <tr>
+          <td>${stock.ticker}</td>
+          <td>$${stock.price}</td>
+          <td>${stock.recommendation}</td>
+          <td>${stock.potential}</td>
+        </tr>
+      `).join('');
+  }
+
+  loadStocks();
+</script>
+
+</body>
+</html>

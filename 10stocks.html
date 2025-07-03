@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dynamic Stock Screener</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      margin-top: 2rem;
+    }
+    th, td {
+      padding: 1rem;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    th {
+      background: #343a40;
+      color: white;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📉 Stocks Under $5 - Overview</h1>
+<p style="text-align: center;">10 low-priced stocks with available quote data</p>
+<div style="text-align: center; margin-top: 1rem;">
+  <button onclick="loadStocks()" style="padding: 0.5rem 1rem; font-size: 1rem;">🔄 Refresh Data</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Ticker</th>
+      <th>Price</th>
+      <th>Recommendation</th>
+      <th>Potential</th>
+    </tr>
+  </thead>
+  <tbody id="stock-table">
+    <tr><td colspan="4">Loading...</td></tr>
+  </tbody>
+</table>
+
+<script>
+  const tickers = ['SIRI', 'ZOM', 'GTE', 'NOK', 'OGI', 'MNMD', 'CPRX', 'BB', 'EXPR', 'IDEX'];
+  const apiKey = 'd0r78bpr01qn4tjgtgpgd0r78bpr01qn4tjgtgq0'; // Replace with your real API key
+  const tableBody = document.getElementById('stock-table');
+
+  async function fetchStockData(ticker) {
+    try {
+      // 1️⃣ Get the latest quote first (cheap, single call)
+      const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${apiKey}`);
+      const quote = await quoteRes.json();
+
+      // If no price or the price is $5+ we skip the stock (reduces unnecessary calls ⏩)
+      if (!quote.c || quote.c >= 5) return null;
+
+      // 2️⃣ Only now fetch the rating; saves half the API calls for non‑qualifying stocks
+      const ratingRes = await fetch(`https://finnhub.io/api/v1/stock/recommendation?symbol=${ticker}&token=${apiKey}`);
+      const ratings = await ratingRes.json();
+
+      return {
+        ticker,
+        price: quote.c.toFixed(2),
+        recommendation: (ratings.length > 0 && ratings[0].strongBuy > 0) ? 'Strong Buy' : 'No Rating',
+        potential: (quote.pc && quote.c < quote.pc) ? 'High' : 'Moderate'
+      };
+    } catch (error) {
+      console.error(`Error fetching data for ${ticker}`, error);
+      return null;
+    }
+  }
+
+  function createLoadingRow(ticker) {
+    const row = document.createElement('tr');
+    row.innerHTML = \`<td>\${ticker}</td><td colspan="3">Loading…</td>\`;
+    return row;
+  }
+
+  function clearTable() {
+    tableBody.innerHTML = '';
+  }
+
+  // 🔄 Main loader — shows each row as soon as its data comes back (better perceived speed)
+  async function loadStocks() {
+    clearTable();
+    // Kick off fetches in parallel but update the UI as each finishes
+    tickers.forEach(async (ticker) => {
+      const row = createLoadingRow(ticker);
+      tableBody.appendChild(row);
+
+      const stock = await fetchStockData(ticker);
+      if (stock) {
+        row.innerHTML = \`
+          <td>\${stock.ticker}</td>
+          <td>$\${stock.price}</td>
+          <td>\${stock.recommendation}</td>
+          <td>\${stock.potential}</td>\`;
+      } else {
+        // Remove row if stock didn't qualify
+        row.remove();
+      }
+    });
+  }
+
+  // Run on first load
+  loadStocks();
+</script>
+
+</body>
+</html>
