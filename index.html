@@ -1,85 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Short-Sell Picks Under $5</title>
-<style>
-body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-h1 { color: #333; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-th { background: #eee; }
-</style>
+  <meta charset="UTF-8">
+  <title>Short-Sell Picks Under $5</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { color: #333; }
+    button { margin-top: 10px; padding: 10px 20px; font-size: 16px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+  </style>
 </head>
 <body>
-<h1>Live Stock Picks for Short Selling (Under $5 & P/E < 20)</h1>
+
+<h1>Live Stock Picks for Short Selling<br>(Under $5 & P/E &lt; 20)</h1>
+<button onclick="fetchStocks()">🔁 Refresh Picks</button>
+
 <table id="stock-table">
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Price</th>
-<th>P/E Ratio</th>
-<th>Short Sell Signal</th>
-</tr>
-</thead>
-<tbody id="stock-body">
-<tr><td colspan="4">Loading...</td></tr>
-</tbody>
+  <thead>
+    <tr>
+      <th>Symbol</th>
+      <th>Price</th>
+      <th>P/E Ratio</th>
+      <th>Short Sell Signal</th>
+    </tr>
+  </thead>
+  <tbody id="stock-body">
+    <tr><td colspan="4">Loading...</td></tr>
+  </tbody>
 </table>
 
 <script>
-const API_KEY = 'https://jobtech33.github.io/JobTech.v1.2/'; // Replace with your Finnhub API key
+  const API_KEY = 'YOUR_FINNHUB_API_KEY_HERE'; // Replace with your actual API key
 
-async function fetchStocks() {
-const response = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${API_KEY}`);
-const symbols = await response.json();
+  async function fetchStocks() {
+    const tbody = document.getElementById('stock-body');
+    tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
 
-const filtered = [];
-for (let i = 0; i < symbols.length; i++) {
-const sym = symbols[i];
-try {
-const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${sym.symbol}&token=${API_KEY}`);
-const fundamentalsRes = await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym.symbol}&metric=all&token=${API_KEY}`);
+    try {
+      const symbolRes = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${API_KEY}`);
+      const symbols = await symbolRes.json();
 
-const quote = await quoteRes.json();
-const fundamentals = await fundamentalsRes.json();
+      const filtered = [];
 
-const price = quote.c;
-const pe = fundamentals.metric.peTTM;
+      for (let i = 0; i < symbols.length && filtered.length < 10; i++) {
+        const sym = symbols[i];
 
-if (price > 0 && price <= 5 && pe && pe < 20) {
-filtered.push({ symbol: sym.symbol, price, pe, short: "✅ Likely" });
-}
+        try {
+          const [quoteRes, metricsRes] = await Promise.all([
+            fetch(`https://finnhub.io/api/v1/quote?symbol=${sym.symbol}&token=${API_KEY}`),
+            fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym.symbol}&metric=all&token=${API_KEY}`)
+          ]);
 
-if (filtered.length >= 10) break; // Limit to top 10 for performance
-} catch (err) {
-continue; // Skip errors
-}
-}
+          const quote = await quoteRes.json();
+          const fundamentals = await metricsRes.json();
+          const price = quote.c;
+          const pe = fundamentals.metric.peTTM;
 
-updateTable(filtered);
-}
+          if (price > 0 && price <= 5 && pe && pe < 20) {
+            filtered.push({ symbol: sym.symbol, price, pe, short: "✅ Likely" });
+          }
+        } catch (err) {
+          console.warn(`Error with ${sym.symbol}:`, err);
+        }
+      }
 
-function updateTable(data) {
-const tbody = document.getElementById('stock-body');
-tbody.innerHTML = '';
-if (data.length === 0) {
-tbody.innerHTML = '<tr><td colspan="4">No matches found</td></tr>';
-return;
-}
-data.forEach(row => {
-tbody.innerHTML += `
-<tr>
-<td>${row.symbol}</td>
-<td>$${row.price.toFixed(2)}</td>
-<td>${row.pe.toFixed(2)}</td>
-<td>${row.short}</td>
-</tr>
-`;
-});
-}
+      updateTable(filtered);
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="4">Failed to fetch data. Try again later.</td></tr>`;
+      console.error("API error:", err);
+    }
+  }
 
-fetchStocks();
+  function updateTable(data) {
+    const tbody = document.getElementById('stock-body');
+    tbody.innerHTML = '';
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4">No matches found</td></tr>';
+      return;
+    }
+
+    data.forEach(row => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${row.symbol}</td>
+          <td>$${row.price.toFixed(2)}</td>
+          <td>${row.pe.toFixed(2)}</td>
+          <td>${row.short}</td>
+        </tr>`;
+    });
+  }
+
+  // Initial fetch
+  fetchStocks();
 </script>
+
 </body>
 </html>
