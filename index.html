@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stock of the Day</title>
+<style>
+body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; text-align: center; }
+h1 { color: #2c3e50; }
+.card {
+background: white;
+padding: 20px;
+border-radius: 8px;
+max-width: 600px;
+margin: 0 auto;
+box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+td, th { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+button { margin-top: 20px; padding: 10px 20px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<h1>📈 Stock of the Day</h1>
+<div class="card" id="stock-info">
+<p>Loading...</p>
+</div>
+<button onclick="getStockOfTheDay()">🔁 New Pick</button>
+
+<script>
+const API_KEY = 'YOUR_FINNHUB_API_KEY_HERE'; // Replace this
+const stockList = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'AMD', 'INTC', 'NFLX'];
+
+async function getStockOfTheDay() {
+const symbol = stockList[Math.floor(Math.random() * stockList.length)];
+const container = document.getElementById('stock-info');
+container.innerHTML = `<p>Loading data for ${symbol}...</p>`;
+
+try {
+const [quoteRes, metricRes, targetRes, recRes, profileRes] = await Promise.all([
+fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`),
+fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`),
+fetch(`https://finnhub.io/api/v1/stock/price-target?symbol=${symbol}&token=${API_KEY}`),
+fetch(`https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${API_KEY}`),
+fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${API_KEY}`)
+]);
+
+const quote = await quoteRes.json();
+const metrics = await metricRes.json();
+const targets = await targetRes.json();
+const recs = await recRes.json();
+const profile = await profileRes.json();
+
+const rec = recs[0] || {};
+const company = profile.name || symbol;
+const price = quote.c?.toFixed(2) || 'N/A';
+const pe = metrics.metric?.peTTM?.toFixed(2) || 'N/A';
+
+container.innerHTML = `
+<h2>${symbol} - ${company}</h2>
+<table>
+<tr><th>Price</th><td>$${price}</td></tr>
+<tr><th>P/E Ratio</th><td>${pe}</td></tr>
+<tr><th>Target High</th><td>$${targets.targetHigh?.toFixed(2) || 'N/A'}</td></tr>
+<tr><th>Target Average</th><td>$${targets.targetMean?.toFixed(2) || 'N/A'}</td></tr>
+<tr><th>Target Low</th><td>$${targets.targetLow?.toFixed(2) || 'N/A'}</td></tr>
+<tr><th>Analyst Recommendation</th><td>${rec.recommendation || 'No Data'}</td></tr>
+</table>
+`;
+} catch (err) {
+console.error(err);
+container.innerHTML = `<p>Failed to load stock data. Please try again.</p>`;
+}
+}
+
+// Load one at start
+getStockOfTheDay();
+</script>
+
+</body>
+</html>
