@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<h1>Live Stock Picks for Short Selling<br>(Under $5 & P/E &lt; 20)</h1>
+<h1>Short-Sell Picks (Under $5 & P/E &lt; 20)</h1>
 <button onclick="fetchStocks()">🔁 Refresh Picks</button>
 
 <table id="stock-table">
@@ -32,45 +32,36 @@
 </table>
 
 <script>
-  const API_KEY = 'd1jhpl1r01qvg5gukhagd1jhpl1r01qvg5gukhb0'; // Replace with your actual API key
+  const API_KEY = 'YOUR_FINNHUB_API_KEY_HERE'; // 🔑 Replace with your real Finnhub API key
+  const pennyStocks = ['SNDL', 'IDEX', 'BBIG', 'GTE', 'HYSR', 'ZOM', 'FCEL', 'TRCH', 'AITX', 'CLNE'];
 
   async function fetchStocks() {
     const tbody = document.getElementById('stock-body');
     tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
 
-    try {
-      const symbolRes = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${API_KEY}`);
-      const symbols = await symbolRes.json();
+    const filtered = [];
 
-      const filtered = [];
+    for (let symbol of pennyStocks) {
+      try {
+        const [quoteRes, metricsRes] = await Promise.all([
+          fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`),
+          fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`)
+        ]);
 
-      for (let i = 0; i < symbols.length && filtered.length < 10; i++) {
-        const sym = symbols[i];
+        const quote = await quoteRes.json();
+        const fundamentals = await metricsRes.json();
+        const price = quote.c;
+        const pe = fundamentals.metric.peTTM;
 
-        try {
-          const [quoteRes, metricsRes] = await Promise.all([
-            fetch(`https://finnhub.io/api/v1/quote?symbol=${sym.symbol}&token=${API_KEY}`),
-            fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym.symbol}&metric=all&token=${API_KEY}`)
-          ]);
-
-          const quote = await quoteRes.json();
-          const fundamentals = await metricsRes.json();
-          const price = quote.c;
-          const pe = fundamentals.metric.peTTM;
-
-          if (price > 0 && price <= 5 && pe && pe < 20) {
-            filtered.push({ symbol: sym.symbol, price, pe, short: "✅ Likely" });
-          }
-        } catch (err) {
-          console.warn(`Error with ${sym.symbol}:`, err);
+        if (price > 0 && price <= 5 && pe && pe < 20) {
+          filtered.push({ symbol, price, pe, short: "✅ Likely" });
         }
+      } catch (err) {
+        console.warn(`Error with ${symbol}:`, err);
       }
-
-      updateTable(filtered);
-    } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="4">Failed to fetch data. Try again later.</td></tr>`;
-      console.error("API error:", err);
     }
+
+    updateTable(filtered);
   }
 
   function updateTable(data) {
@@ -93,7 +84,6 @@
     });
   }
 
-  // Initial fetch
   fetchStocks();
 </script>
 
