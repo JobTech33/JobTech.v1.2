@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stock of the Day</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 30px;
+      text-align: center;
+    }
+    .card {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      max-width: 800px;
+      margin: auto;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background: #f8f8f8;
+    }
+    canvas {
+      margin-top: 30px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📈 Stock of the Day</h1>
+<div class="card" id="stock-info">
+  <p>Loading...</p>
+</div>
+<button onclick="getStockOfTheDay()">🔁 Pick Another</button>
+<canvas id="stockChart" height="100"></canvas>
+
+<script>
+  const API_KEY = 'YOUR_FINNHUB_API_KEY_HERE'; // <- Replace with your actual key
+  const stockList = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'AMD', 'INTC', 'NFLX'];
+  let chartInstance;
+
+  function summarizeRecommendation(rec) {
+    if (!rec) return 'No data';
+    const { strongBuy = 0, buy = 0, hold = 0, sell = 0, strongSell = 0 } = rec;
+    const total = strongBuy + buy + hold + sell + strongSell;
+    if (total === 0) return 'No ratings';
+    const buyScore = strongBuy * 2 + buy;
+    const sellScore = strongSell * 2 + sell;
+    if (buyScore > sellScore + hold) return 'Strong Buy';
+    if (buyScore > sellScore) return 'Buy';
+    if (sellScore > buyScore + hold) return 'Strong Sell';
+    if (sellScore > buyScore) return 'Sell';
+    return 'Hold';
+  }
+
+  async function getStockOfTheDay() {
+    const symbol = stockList[Math.floor(Math.random() * stockList.length)];
+    const container = document.getElementById('stock-info');
+    container.innerHTML = `<p>Loading data for ${symbol}...</p>`;
+    document.getElementById('stockChart').style.display = 'none';
+
+    const now = Math.floor(Date.now() / 1000);
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60;
+
+    try {
+      const [quoteRes, metricRes, targetRes, recRes, profileRes, candleRes] = await Promise.all([
+        fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`),
+        fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`),
+        fetch(`https://finnhub.io/api/v1/stock/price-target?symbol=${symbol}&token=${API_KEY}`),
+        fetch(`https://finnhub.io/api/v1/stock/recommendation?symbol=${symbol}&token=${API_KEY}`),
+        fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${API_KEY}`),
+        fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${sevenDaysAgo}&to=${now}&token=${API_KEY}`)
+      ]);
+
+      const quote = await quoteRes.json();
+      const metrics = await metricRes.json();
+      const targets = await targetRes.json();
+      const recs = await recRes.json();
+      const profile = await profileRes.json();
+      const candle = await candleRes.json();
+
+      const rec = recs[0] || {};
+      const company = profile.name || symbol;
+      const price = typeof quote.c === 'number' ? `$${quote.c.toFixed(2)}` : 'N/A';
+      const pe = typeof metrics.metric?.peTTM === 'number' ? metrics.metric.peTTM.toFixed(2) : 'N/A';
+      const targetHigh = typeof targets.targetHigh === 'number' ? `$${targets.targetHigh.toFixed(2)}` : 'N/A';
+      const targetAvg = typeof targets.targetMean === 'number' ? `$${targets.targetMean.toFixed(2)}` : 'N/A';
+      const targetLow = typeof targets.targetLow === 'number' ? `$${targets.targetLow.toFixed(2)}` : 'N/A';
+      const recommendation = summarizeRecommendation(rec);
+
+      container.innerHTML = `
+        <h2>${symbol} - ${company}</h2>
+        <table>
+          <tr><th>Current Price</th><td>${price}</td></tr>
+          <tr><th>P/E Ratio</th><td>${pe}</td></tr>
+          <tr><th>Target High</th><td>${targetHigh}</td></tr>
+          <tr><th>Target Average</th><td>${targetAvg}</td></tr>
+          <tr><th>Target Low</th><td>${targetLow}</td></tr>
+          <tr><th>Analyst Recommendation</th><td>${recommendation}</td></tr>
+        </table>
+      `;
+
+      if (candle.s === 'ok') {
+        const labels = candle.t.map(ts => {
+          const d = new Date(ts * 1000);
+          return `${d.getMonth()+1}/${d.getDate()}`;
+        });
+
+        const data = candle.c;
+
+        if (chartInstance) chartInstance.destroy();
+
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: `${symbol} Close Price (Last 7 Days)`,
+              data: data,
+              fill: false,
+              borderColor: 'blue',
+              tension: 0.3
+            }]
+          },
+          options: {
+            scales: {
+              y: { beginAtZero: false },
+              x: { display: true }
+            }
+          }
+        });
+
+        document.getElementById('stockChart').style.display = 'block';
+      }
+    } catch (error) {
+      console.error(error);
+      container.innerHTML = `<p>❌ Failed to load data. Try again.</p>`;
+    }
+  }
+
+  getStockOfTheDay();
+</script>
+
+</body>
+</html>
