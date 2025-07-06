@@ -37,6 +37,8 @@
     }
     canvas {
       margin-top: 30px;
+      max-width: 100%;
+      height: auto;
     }
     button {
       margin-top: 20px;
@@ -104,9 +106,11 @@
       const company = profile.name || symbol;
       const price = typeof quote.c === 'number' ? `$${quote.c.toFixed(2)}` : 'N/A';
       const pe = typeof metrics.metric?.peTTM === 'number' ? metrics.metric.peTTM.toFixed(2) : 'N/A';
-      const targetHigh = typeof targets.targetHigh === 'number' ? `$${targets.targetHigh.toFixed(2)}` : 'N/A';
-      const targetAvg = typeof targets.targetMean === 'number' ? `$${targets.targetMean.toFixed(2)}` : 'N/A';
-      const targetLow = typeof targets.targetLow === 'number' ? `$${targets.targetLow.toFixed(2)}` : 'N/A';
+
+      const targetHigh = (typeof targets.targetHigh === 'number' && !isNaN(targets.targetHigh)) ? `$${targets.targetHigh.toFixed(2)}` : 'N/A';
+      const targetAvg = (typeof targets.targetMean === 'number' && !isNaN(targets.targetMean)) ? `$${targets.targetMean.toFixed(2)}` : 'N/A';
+      const targetLow = (typeof targets.targetLow === 'number' && !isNaN(targets.targetLow)) ? `$${targets.targetLow.toFixed(2)}` : 'N/A';
+
       const recommendation = summarizeRecommendation(rec);
 
       container.innerHTML = `
@@ -122,9 +126,14 @@
       `;
 
       if (candle.s === 'ok') {
+        if (!Array.isArray(candle.t) || !Array.isArray(candle.c) || candle.t.length !== candle.c.length) {
+          document.getElementById('stockChart').style.display = 'none';
+          return;
+        }
+
         const labels = candle.t.map(ts => {
           const d = new Date(ts * 1000);
-          return `${d.getMonth()+1}/${d.getDate()}`;
+          return `${d.getMonth() + 1}/${d.getDate()}`;
         });
 
         const data = candle.c;
@@ -139,12 +148,14 @@
             datasets: [{
               label: `${symbol} Close Price (Last 7 Days)`,
               data: data,
-              fill: false,
+              fill: true,
               borderColor: 'blue',
+              backgroundColor: 'rgba(0,123,255,0.2)',
               tension: 0.3
             }]
           },
           options: {
+            responsive: true,
             scales: {
               y: { beginAtZero: false },
               x: { display: true }
