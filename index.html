@@ -51,10 +51,14 @@
 <body>
 
 <h1>📈 Stock of the Day</h1>
+<div style="margin-bottom:20px;">
+  <input id="symbolInput" type="text" placeholder="Enter symbol (AAPL)" />
+  <button onclick="showCustomSymbol()">Show Chart</button>
+  <button onclick="getStockOfTheDay()">🔁 Pick Random</button>
+</div>
 <div class="card" id="stock-info">
   <p>Loading...</p>
 </div>
-<button onclick="getStockOfTheDay()">🔁 Pick Another</button>
 <canvas id="stockChart" height="100"></canvas>
 
 <script>
@@ -76,8 +80,7 @@
     return 'Hold';
   }
 
-  async function getStockOfTheDay() {
-    const symbol = stockList[Math.floor(Math.random() * stockList.length)];
+  async function loadStock(symbol) {
     const container = document.getElementById('stock-info');
     container.innerHTML = `<p>Loading data for ${symbol}...</p>`;
     document.getElementById('stockChart').style.display = 'none';
@@ -169,10 +172,20 @@
       console.error(error);
       container.innerHTML = `<p>❌ Failed to load data. Try again.</p>`;
     }
-  }
+    }
 
-  getStockOfTheDay();
-</script>
+    function getStockOfTheDay() {
+      const symbol = stockList[Math.floor(Math.random() * stockList.length)];
+      loadStock(symbol);
+    }
+
+    function showCustomSymbol() {
+      const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+      if (symbol) loadStock(symbol);
+    }
+
+    getStockOfTheDay();
+  </script>
 
 </body>
 </html>
