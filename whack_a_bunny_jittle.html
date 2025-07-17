@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Bunny - Jittle Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            text-shadow: 3px 3px 0 #ff69b4;
+            letter-spacing: 2px;
+            color: #ff1493;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #ff69b4;
+            margin-bottom: 20px;
+            font-style: italic;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .info-box {
+            text-align: center;
+        }
+        
+        .info-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ff1493;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin: 30px auto;
+            max-width: 500px;
+        }
+        
+        .hole {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #8bc34a 0%, #4caf50 100%);
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: inset 0 10px 0 rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+            border: 3px solid #66bb6a;
+        }
+        
+        .hole:after {
+            content: '';
+            position: absolute;
+            bottom: -25px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(135deg, #689f38 0%, #388e3c 100%);
+            border-radius: 50%;
+        }
+        
+        .bunny {
+            position: absolute;
+            width: 80%;
+            height: 120px;
+            bottom: -120px;
+            left: 10%;
+            transition: bottom 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .bunny-body {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+            border-radius: 50% 50% 40% 40%;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid #e0e0e0;
+        }
+        
+        .bunny-ears {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 50px;
+        }
+        
+        .ear {
+            position: absolute;
+            width: 25px;
+            height: 45px;
+            background: linear-gradient(135deg, #fff 0%, #f5f5f5 100%);
+            border-radius: 50% 50% 20% 20%;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .ear.left {
+            left: 5px;
+            transform: rotate(-15deg);
+        }
+        
+        .ear.right {
+            right: 5px;
+            transform: rotate(15deg);
+        }
+        
+        .ear-inner {
+            position: absolute;
+            width: 15px;
+            height: 30px;
+            background: linear-gradient(135deg, #ffb6c1 0%, #ffc0cb 100%);
+            border-radius: 50%;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .bunny-face {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 45px;
+        }
+        
+        .eye {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+            top: 10px;
+        }
+        
+        .eye.left {
+            left: 12px;
+        }
+        
+        .eye.right {
+            right: 12px;
+        }
+        
+        .nose {
+            position: absolute;
+            width: 6px;
+            height: 4px;
+            background: #ffb6c1;
+            border-radius: 50%;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .mouth {
+            position: absolute;
+            width: 12px;
+            height: 8px;
+            border: 2px solid #333;
+            border-top: none;
+            border-radius: 0 0 50% 50%;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .bunny.active {
+            bottom: 10px;
+        }
+        
+        .bunny.whacked {
+            animation: whacked 0.5s;
+        }
+        
+        @keyframes whacked {
+            0% { transform: scale(1); }
+            25% { transform: scale(0.9) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(10deg); }
+            75% { transform: scale(0.95) rotate(-5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.4rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(255, 20, 147, 0.3);
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 0 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #ff1493 0%, #dc143c 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .difficulty {
+            margin: 20px 0;
+        }
+        
+        .difficulty label {
+            font-size: 1.2rem;
+            margin-right: 10px;
+            color: #ff1493;
+            font-weight: bold;
+        }
+        
+        select {
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #ff69b4;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+            font-size: 1.1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .instructions h2 {
+            margin-bottom: 10px;
+            color: #ff1493;
+            text-align: center;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 600px) {
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+                max-width: 350px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .hole {
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WHACK-A-BUNNY!</h1>
+        <div class="subtitle">Jittle Edition</div>
+        
+        <div class="game-info">
+            <div class="info-box">
+                <div>SCORE</div>
+                <div id="score" class="info-value">0</div>
+            </div>
+            <div class="info-box">
+                <div>TIME LEFT</div>
+                <div id="timer" class="info-value">60</div>
+            </div>
+            <div class="info-box">
+                <div>HIGH SCORE</div>
+                <div id="high-score" class="info-value">0</div>
+            </div>
+        </div>
+        
+        <div class="difficulty">
+            <label for="difficulty">Difficulty:</label>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="insane">Insane</option>
+            </select>
+        </div>
+        
+        <div class="game-board" id="game-board">
+            <!-- Holes will be generated by JavaScript -->
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn" class="btn">START GAME</button>
+            <button id="reset-btn" class="btn">RESET</button>
+        </div>
+        
+        <div class="instructions">
+            <h2>How to Play</h2>
+            <ul>
+                <li>Click the <strong>START GAME</strong> button to begin</li>
+                <li>Boop (click) the cute bunnies as they pop up from the holes</li>
+                <li>Each successful boop gives you 10 points</li>
+                <li>The game lasts for 60 seconds</li>
+                <li>Higher difficulty levels make bunnies appear faster</li>
+                <li>Try to beat your high score!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game elements
+            const gameBoard = document.getElementById('game-board');
+            const scoreDisplay = document.getElementById('score');
+            const timerDisplay = document.getElementById('timer');
+            const highScoreDisplay = document.getElementById('high-score');
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const difficultySelect = document.getElementById('difficulty');
+            
+            // Game variables
+            let score = 0;
+            let timeLeft = 60;
+            let highScore = 0; // Changed from localStorage for compatibility
+            let gameActive = false;
+            let gameTimer;
+            let moleTimer;
+            
+            // Difficulty settings (bunny appearance interval in ms)
+            const difficultySettings = {
+                easy: 1500,
+                medium: 1000,
+                hard: 700,
+                insane: 400
+            };
+            
+            // Initialize high score display
+            highScoreDisplay.textContent = highScore;
+            
+            // Create game holes with cute bunnies
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                
+                const bunny = document.createElement('div');
+                bunny.className = 'bunny';
+                bunny.dataset.id = i;
+                
+                // Create bunny structure
+                const bunnyBody = document.createElement('div');
+                bunnyBody.className = 'bunny-body';
+                
+                const bunnyEars = document.createElement('div');
+                bunnyEars.className = 'bunny-ears';
+                
+                const leftEar = document.createElement('div');
+                leftEar.className = 'ear left';
+                const leftEarInner = document.createElement('div');
+                leftEarInner.className = 'ear-inner';
+                leftEar.appendChild(leftEarInner);
+                
+                const rightEar = document.createElement('div');
+                rightEar.className = 'ear right';
+                const rightEarInner = document.createElement('div');
+                rightEarInner.className = 'ear-inner';
+                rightEar.appendChild(rightEarInner);
+                
+                bunnyEars.appendChild(leftEar);
+                bunnyEars.appendChild(rightEar);
+                
+                const bunnyFace = document.createElement('div');
+                bunnyFace.className = 'bunny-face';
+                
+                const leftEye = document.createElement('div');
+                leftEye.className = 'eye left';
+                const rightEye = document.createElement('div');
+                rightEye.className = 'eye right';
+                
+                const nose = document.createElement('div');
+                nose.className = 'nose';
+                
+                const mouth = document.createElement('div');
+                mouth.className = 'mouth';
+                
+                bunnyFace.appendChild(leftEye);
+                bunnyFace.appendChild(rightEye);
+                bunnyFace.appendChild(nose);
+                bunnyFace.appendChild(mouth);
+                
+                bunnyBody.appendChild(bunnyEars);
+                bunnyBody.appendChild(bunnyFace);
+                bunny.appendChild(bunnyBody);
+                
+                hole.appendChild(bunny);
+                gameBoard.appendChild(hole);
+                
+                // Add click event to bunnies
+                bunny.addEventListener('click', whackBunny);
+            }
+            
+            const bunnies = document.querySelectorAll('.bunny');
+            
+            // Start game function
+            function startGame() {
+                if (gameActive) return;
+                
+                gameActive = true;
+                score = 0;
+                timeLeft = 60;
+                updateScore();
+                timerDisplay.textContent = timeLeft;
+                startBtn.disabled = true;
+                
+                // Start game timer
+                gameTimer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }, 1000);
+                
+                // Start popping bunnies
+                popBunny();
+            }
+            
+            // Pop up a random bunny
+            function popBunny() {
+                if (!gameActive) return;
+                
+                // Hide all bunnies
+                bunnies.forEach(bunny => {
+                    bunny.classList.remove('active');
+                    bunny.classList.remove('whacked');
+                });
+                
+                // Select a random bunny
+                const randomIndex = Math.floor(Math.random() * bunnies.length);
+                const bunny = bunnies[randomIndex];
+                
+                // Show the bunny
+                bunny.classList.add('active');
+                
+                // Automatically hide the bunny after a random time
+                const showTime = Math.random() * 2000 + 1000; // 1-3 seconds
+                setTimeout(() => {
+                    if (bunny.classList.contains('active')) {
+                        bunny.classList.remove('active');
+                    }
+                }, showTime);
+                
+                // Schedule next bunny
+                const difficulty = difficultySelect.value;
+                const nextBunnyTime = difficultySettings[difficulty];
+                moleTimer = setTimeout(popBunny, nextBunnyTime);
+            }
+            
+            // Whack a bunny (now it's booping!)
+            function whackBunny(e) {
+                if (!gameActive) return;
+                
+                const bunny = e.target.closest('.bunny');
+                if (bunny && bunny.classList.contains('active')) {
+                    // Add whacked effect
+                    bunny.classList.add('whacked');
+                    
+                    // Remove active class after a delay to see the effect
+                    setTimeout(() => {
+                        bunny.classList.remove('active');
+                        bunny.classList.remove('whacked');
+                    }, 500);
+                    
+                    // Increase score
+                    score += 10;
+                    updateScore();
+                    
+                    // Play sound effect
+                    playBoopSound();
+                }
+            }
+            
+            // Play boop sound (softer and cuter)
+            function playBoopSound() {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 500; // Higher pitch for cute sound
+                gainNode.gain.value = 0.2;
+                
+                oscillator.start();
+                
+                // Create a cute boop sound pattern
+                setTimeout(() => {
+                    oscillator.frequency.value = 600;
+                }, 50);
+                
+                // Stop after short duration
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 150);
+            }
+            
+            // Update score display
+            function updateScore() {
+                scoreDisplay.textContent = score;
+            }
+            
+            // End game function
+            function endGame() {
+                gameActive = false;
+                clearInterval(gameTimer);
+                clearTimeout(moleTimer);
+                startBtn.disabled = false;
+                
+                // Hide all bunnies
+                bunnies.forEach(bunny => {
+                    bunny.classList.remove('active');
+                });
+                
+                // Update high score
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreDisplay.textContent = highScore;
+                    
+                    // Show celebration
+                    showCelebration();
+                }
+            }
+            
+            // Reset game
+            function resetGame() {
+                clearInterval(gameTimer);
+                clearTimeout(moleTimer);
+                gameActive = false;
+                startBtn.disabled = false;
+                score = 0;
+                timeLeft = 60;
+                updateScore();
+                timerDisplay.textContent = timeLeft;
+                
+                // Hide all bunnies
+                bunnies.forEach(bunny => {
+                    bunny.classList.remove('active');
+                    bunny.classList.remove('whacked');
+                });
+            }
+            
+            // Show celebration for new high score
+            function showCelebration() {
+                const container = document.querySelector('.container');
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.position = 'absolute';
+                confetti.style.top = '0';
+                confetti.style.left = '0';
+                confetti.style.width = '100%';
+                confetti.style.height = '100%';
+                confetti.style.zIndex = '100';
+                confetti.style.pointerEvents = 'none';
+                container.appendChild(confetti);
+                
+                // Create heart-shaped confetti
+                for (let i = 0; i < 100; i++) {
+                    const heart = document.createElement('div');
+                    heart.innerHTML = '💖';
+                    heart.style.position = 'absolute';
+                    heart.style.fontSize = '20px';
+                    heart.style.top = '-30px';
+                    heart.style.left = `${Math.random() * 100}%`;
+                    
+                    const animation = heart.animate([
+                        { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+                        { transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                    ], {
+                        duration: Math.random() * 3000 + 2000,
+                        easing: 'cubic-bezier(0,0.9,0.57,1)'
+                    });
+                    
+                    confetti.appendChild(heart);
+                    
+                    // Remove after animation
+                    animation.onfinish = () => heart.remove();
+                }
+                
+                // Remove confetti container after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+            
+            // Event listeners
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', resetGame);
+        });
+    </script>
+</body>
+</html>
