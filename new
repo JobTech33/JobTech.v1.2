@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Mastery - Advanced Programming</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2962ff;
+            --secondary: #0d47a1;
+            --accent: #ff6f00;
+            --dark: #1a237e;
+            --light: #e3f2fd;
+            --gray: #f5f5f5;
+            --text: #333;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: rgba(13, 28, 61, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .logo i {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            padding: 0 5%;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(255, 111, 0, 0.2) 0%, transparent 40%);
+            z-index: -1;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: #ff8f00;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-image {
+            position: absolute;
+            right: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45%;
+            max-width: 600px;
+            z-index: 1;
+        }
+
+        .hero-image .code-editor {
+            background: #263238;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .editor-header {
+            background: #1e272c;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .editor-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .editor-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .editor-button.red { background: #ff5f56; }
+        .editor-button.yellow { background: #ffbd2e; }
+        .editor-button.green { background: #27c93f; }
+
+        .editor-title {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+            font-family: monospace;
+        }
+
+        .editor-content {
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            color: #e0e0e0;
+            font-size: 1rem;
+            line-height: 1.5;
+            overflow: auto;
+            max-height: 400px;
+        }
+
+        .editor-content .keyword { color: #c792ea; }
+        .editor-content .class { color: #82aaff; }
+        .editor-content .function { color: #ffcb6b; }
+        .editor-content .string { color: #c3e88d; }
+        .editor-content .comment { color: #546e7a; }
+
+        .features {
+            padding: 5rem 5%;
+            background: var(--gray);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--dark);
+            position: relative;
+        }
+
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            background: var(--primary);
+            color: white;
+            font-size: 2.5rem;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .feature-content {
+            padding: 2rem;
+        }
+
+        .feature-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .feature-content p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .java-showcase {
+            padding: 5rem 5%;
+            background: white;
+            text-align: center;
+        }
+
+        .java-console {
+            background: #1a1a1a;
+            color: #33ff33;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            font-family: monospace;
+            text-align: left;
+            height: 300px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .console-header {
+            color: #aaa;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .console-output {
+            line-height: 1.8;
+        }
+
+        .console-output .command { color: #4fc3f7; }
+        .console-output .output { color: #fff; }
+        .console-output .success { color: #69f0ae; }
+        .console-output .error { color: #ff5252; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .run-btn {
+            background: var(--primary);
+        }
+
+        .reset-btn {
+            background: #616161;
+        }
+
+        footer {
+            background: #0d1530;
+            color: white;
+            padding: 3rem 5%;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-column h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .footer-column h3::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        .footer-column p {
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--accent);
+            transform: translateY(-3px);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: #ddd;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+            padding-left: 5px;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+        }
+
+        /* Responsive design */
+        @media (max-width: 992px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 5rem;
+                padding-bottom: 5rem;
+            }
+
+            .hero-content {
+                margin-bottom: 3rem;
+            }
+
+            .hero-image {
+                position: relative;
+                width: 100%;
+                right: 0;
+                top: 0;
+                transform: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .editor-content {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Navigation -->
+    <header>
+        <nav>
+            <div class="logo">
+                <i class="fab fa-java"></i>
+                <span>JavaMastery</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#showcase">Showcase</a>
+                <a href="#resources">Resources</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Master <span>Java Programming</span> Like Never Before</h1>
+            <p>Learn advanced Java concepts, design patterns, and best practices with our interactive platform. Build robust applications with the power of Java.</p>
+            <a href="#showcase" class="btn">Start Coding Now</a>
+        </div>
+        <div class="hero-image">
+            <div class="code-editor">
+                <div class="editor-header">
+                    <div class="editor-buttons">
+                        <div class="editor-button red"></div>
+                        <div class="editor-button yellow"></div>
+                        <div class="editor-button green"></div>
+                    </div>
+                    <div class="editor-title">Calculator.java</div>
+                </div>
+                <div class="editor-content">
+                    <pre><span class="keyword">public class</span> <span class="class">Calculator</span> {
+    
+    <span class="comment">// Add two numbers</span>
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="function">add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">return</span> a + b;
+    }
+    
+    <span class="comment">// Subtract two numbers</span>
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="function">subtract</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">return</span> a - b;
+    }
+    
+    <span class="comment">// Multiply two numbers</span>
+    <span class="keyword">public</span> <span class="keyword">int</span> <span class="function">multiply</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">return</span> a * b;
+    }
+    
+    <span class="comment">// Divide two numbers</span>
+    <span class="keyword">public</span> <span class="keyword">double</span> <span class="function">divide</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b) {
+        <span class="keyword">if</span>(b == 0) {
+            <span class="keyword">throw new</span> <span class="class">IllegalArgumentException</span>(<span class="string">"Cannot divide by zero"</span>);
+        }
+        <span class="keyword">return</span> (<span class="keyword">double</span>) a / b;
+    }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title">Advanced Java Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <div class="feature-content">
+                    <h3>Multithreading</h3>
+                    <p>Learn to build concurrent applications with Java's powerful multithreading capabilities. Create efficient, responsive programs.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="feature-content">
+                    <h3>Networking</h3>
+                    <p>Master Java networking to create client-server applications, RESTful services, and real-time communication systems.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="feature-content">
+                    <h3>Database Connectivity</h3>
+                    <p>Connect to databases using JDBC, work with ORM frameworks like Hibernate, and build data-driven applications.</p>
+                    <a href="#" class="btn">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Java Showcase Section -->
+    <section class="java-showcase" id="showcase">
+        <h2 class="section-title">Interactive Java Console</h2>
+        <p>Run Java code directly in your browser and see the results in real-time.</p>
+        
+        <div class="java-console">
+            <div class="console-header">// Java Console - Run your code below</div>
+            <div class="console-output" id="consoleOutput">
+                <div class="output"><span class="command">public class</span> HelloWorld {</div>
+                <div class="output">    <span class="command">public static void</span> main(String[] args) {</div>
+                <div class="output">        System.out.println(<span class="string">"Hello, Java World!"</span>);</div>
+                <div class="output">    }</div>
+                <div class="output">}</div>
+                <div class="output success">>> Program compiled successfully</div>
+                <div class="output">>> Hello, Java World!</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn run-btn" id="runButton">
+                <i class="fas fa-play"></i> Run Code
+            </button>
+            <button class="btn reset-btn" id="resetButton">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-column">
+                <h3>JavaMastery</h3>
+                <p>Master Java programming with our comprehensive resources, tutorials, and interactive coding environment.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-github"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h3>Quick Links</h3>
+                <ul class="footer-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#showcase">Code Playground</a></li>
+                    <li><a href="#">Tutorials</a></li>
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">Community</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Java Documentation</a></li>
+                    <li><a href="#">Design Patterns</a></li>
+                    <li><a href="#">Best Practices</a></li>
+                    <li><a href="#">Performance Tips</a></li>
+                    <li><a href="#">Interview Questions</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-envelope"></i> contact@javamastery.com</p>
+                <p><i class="fas fa-map-marker-alt"></i> San Francisco, CA</p>
+            </div>
+        </div>
+        <div class="copyright">
+            &copy; 2023 JavaMastery. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Interactive console functionality
+        document.getElementById('runButton').addEventListener('click', function() {
+            const consoleOutput = document.getElementById('consoleOutput');
+            consoleOutput.innerHTML += `
+                <div class="output success">>> Program compiled successfully</div>
+                <div class="output">>> Hello, Java World!</div>
+                <div class="output">>> Fibonacci Series: 0, 1, 1, 2, 3, 5, 8, 13, 21</div>
+                <div class="output">>> Prime Numbers: 2, 3, 5, 7, 11, 13, 17, 19</div>
+                <div class="output success">>> Program executed in 0.42s</div>
+            `;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        });
+
+        document.getElementById('resetButton').addEventListener('click', function() {
+            document.getElementById('consoleOutput').innerHTML = `
+                <div class="console-header">// Java Console - Run your code below</div>
+                <div class="output"><span class="command">public class</span> HelloWorld {</div>
+                <div class="output">    <span class="command">public static void</span> main(String[] args) {</div>
+                <div class="output">        System.out.println(<span class="string">"Hello, Java World!"</span>);</div>
+                <div class="output">    }</div>
+                <div class="output">}</div>
+            `;
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
