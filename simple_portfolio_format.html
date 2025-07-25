@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>John Bumbera | Portfolio</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #f4f4f4;
+      color: #333;
+    }
+    header {
+      background-color: #1e2a38;
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 1rem;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+    nav a:hover {
+      color: #4facfe;
+    }
+    section {
+      padding: 4rem 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    .projects, .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      flex: 1 1 45%;
+      min-width: 250px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background: #1e2a38;
+      color: white;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      section {
+        padding: 2rem 1rem;
+      }
+      .card {
+        flex: 1 1 100%;
+      }
+      nav a {
+        display: block;
+        margin: 0.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>John Bumbera</h1>
+    <p>
+      <span class="status-indicator"></span>
+      Aspiring Data Analyst | Saint Louis, Missouri
+    </p>
+    <nav>
+      <a href="#about">About</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+    </nav>
+  </header>
+
+  <section id="about">
+    <h2>About Me</h2>
+    <p>I'm a passionate Information Technology student from Saint Louis, currently working on innovative projects that combine design, analysis, and practical problem-solving. After I get through all the simple projects I will start making actually good websites for SEO optimization.</p>
+    <p><strong>Update:</strong> July 6th, 2015 - Working on API integration as well as wanting to move forward in development to possible projects.</p>
+  </section>
+
+  <section id="projects">
+    <h2>Projects</h2>
+    <div class="projects">
+    
+      <div class="card">
+        <h3>🔍 SEO Optimization</h3>
+        <p>Working to advance my digital marketing skills by studying search engine optimization techniques, keyword research, and content strategy to improve website visibility and organic traffic.</p>
+        <p><strong>Status:</strong> Learning & Implementing</p>
+      </div>
+
+      <div class="card">
+        <h3>🚀 Personal Data Tracker App for iOS & Android | Coming Soon!</h3>
+        <p>Currently working on moving from Stock web pages towards activity deployable web-apps!</p>
+        <p><strong>Status:</strong> In Development</p>
+      </div>
+      
+      <div class="card">
+        <h3>📊 AI Stock Portfolio | Current Project</h3>
+        <p>Designing and building an algorithm capable of analyzing symbols and finding favored assets, while navigating many factors.</p>
+        <p><strong>Status:</strong> Active Development</p>
+      </div>
+      
+      <div class="card">
+        <h3>⚙️ Ortery Technologies Photo Cabin Integration | Summer Internship 2023</h3>
+        <p>Managed factories in China & Mexico in the integration of Ortery Technologies photo cabins to expedite product development photography processes, and created a standard documentation & process for future implementation in more facilities.</p>                   
+      </div>
+
+      <div class="card">
+        <h3>🦅 STL Bluebird Objective | Eagle Scout Project</h3>
+        <p>Lead a team of 10 of my peers in the end-to-end production of 25 Peterson Bluebird boxes for the World Bird Sanctuary in Saint Louis.</p>
+      </div>
+         
+    </div>
+  </section>
+
+  <section id="skills">
+    <h2>Skills</h2>
+    <div class="skills">
+      <div class="card">
+        <h4>Technical</h4>
+        <ul>
+          <li>HTML, Oracle Data Modeler, MS Access, Python, C#</li>
+          <li>Linux, 3D Printing, CNC Machining</li>
+          <li>Raspberry Pi</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Professional</h4>
+        <ul>
+          <li>Project Management, Leadership</li>
+          <li>Team Collaboration, Attention to Detail</li>
+          <li>Adaptive Thinking, Problem Solving</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2025 John Bumbera. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        var target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth'
+          });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
