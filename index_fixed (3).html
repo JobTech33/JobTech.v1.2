@@ -1,0 +1,407 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BUMBERA Terminal – Condensed (Indices)</title><style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0a0a0a;color:#e0e0e0;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+.header{display:flex;align-items:center;gap:24px;height:44px;padding:0 16px;border-bottom:1px solid #222;background:#101010}.logo{font-weight:700;color:#00d4ff}
+.nav{display:flex;gap:18px}.nav b,.nav span{font-size:13px;color:#888;cursor:pointer}.nav b{color:#00d4ff}
+.right{margin-left:auto;display:flex;gap:12px;align-items:center}.time{font:12px/1 "Courier New",monospace;color:#888}.dot{width:8px;height:8px;border-radius:50%;background:#00ff88}
+.ticker{
+  height:40px;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+}
+.marquee{
+  display:flex;
+  gap:24px;
+  padding:0 12px;
+  white-space:nowrap;
+  align-items:center;
+  animation:sc 28s linear infinite;
+  will-change: transform;
+}
+@keyframes sc { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.main{flex:1;display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:2fr 1fr 1fr;gap:1px;background:#222;padding:1px;min-height:0}
+.panel{background:#0f0f0f;border:1px solid #222;display:flex;flex-direction:column;min-height:0}.ph{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #333;background:linear-gradient(90deg,#1a1a1a,#141414)}.pt{font-size:12px;color:#00d4ff;text-transform:uppercase}
+.pc{flex:1;min-height:0;overflow:auto;padding:10px}.btn{font-size:10px;padding:4px 8px;border:1px solid #444;background:#1a1a1a;color:#aaa;border-radius:3px;cursor:pointer}.btn:hover{border-color:#00d4ff;color:#00d4ff}
+.tbl{width:100%;border-collapse:collapse}.tbl th{font-size:11px;color:#888;text-transform:uppercase;border-bottom:1px solid #333;text-align:left;padding:6px}.tbl td{padding:6px;font:12px/1.3 "Courier New",monospace;border-bottom:1px solid rgba(255,255,255,.05)}.pos{color:#00ff88;background:rgba(0,255,136,.06)}.neg{color:#ff3366;background:rgba(255,51,102,.06)}.muted{color:#888;font-size:11px}
+.canvas{position:relative;width:100%;height:100%;background:#0a0a0a}.chart{width:100%;height:100%}.ov{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.85);border:1px solid rgba(0,212,255,.3);padding:8px 10px;border-radius:4px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* index cards layout */
+.index-grid{display:grid;grid-template-columns:1fr;gap:8px}
+.index-card{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:6px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.03)}
+.index-meta{display:flex;flex-direction:column}
+.index-name{font-size:12px;color:#888}
+.index-price{font-weight:700;font-size:18px}
+.index-change{font-size:12px}
+.index-ts{font-size:10px;color:#777;margin-top:4px}
+</style></head><body>
+<div class="header"><div class="logo">BUMBERA</div><div class="nav"><b data-v="markets">MARKETS</b><span data-v="portfolio">PORTFOLIO</span><span data-v="analytics">ANALYTICS</span><span data-v="research">RESEARCH</span><span data-v="trading">TRADING</span><span data-v="risk">RISK</span></div><div class="right"><div class="time" id="t">--</div><div class="dot" id="st"></div></div></div>
+<div class="ticker"><div class="marquee" id="mq"><span class="muted">Loading…</span></div></div>
+<div class="main">
+  <!-- Main Chart (span 2 rows) -->
+  <div class="panel" style="grid-row:span 2;">
+    <div class="ph"><span class="pt" id="ct">AAPL</span><div>
+      <button class="btn" data-int="1m">1m</button>
+      <button class="btn" data-int="5m">5m</button>
+      <button class="btn" data-int="15m">15m</button>
+      <button class="btn" data-int="1h">1h</button>
+      <button class="btn" data-int="1d">1d</button>
+    </div></div>
+    <div class="pc" style="padding:0"><div class="canvas"><canvas id="c" class="chart"></canvas><div class="ov"><div id="sym" style="font-weight:700">AAPL</div><div id="px" style="font-size:22px">--</div><div id="chg" class="muted">--</div></div></div></div>
+  </div>
+
+  <!-- Top Movers -->
+  <div class="panel" id="moversPanel">
+    <div class="ph"><span class="pt">Top Gainers & Losers (24h)</span><div><button class="btn" id="mvR">⟲</button> <span id="mvTS" class="muted"></span></div></div>
+    <div class="pc"><div class="split">
+      <div><div class="muted" style="margin:0 0 6px">Gainers</div><table class="tbl"><thead><tr><th>Symbol</th><th>Price</th><th>Δ</th></tr></thead><tbody id="gain"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table></div>
+      <div><div class="muted" style="margin:0 0 6px">Losers</div><table class="tbl"><thead><tr><th>Symbol</th><th>Price</th><th>Δ</th></tr></thead><tbody id="loss"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table></div>
+    </div><div class="muted" style="margin-top:6px">Universe: trending stocks (fallback to watchlist).</div></div>
+  </div>
+
+  <div class="panel"><div class="ph"><span class="pt">Watchlist</span><button class="btn" id="wlR">⟲</button></div><div class="pc"><table class="tbl"><thead><tr><th>Symbol</th><th>Price</th><th>24h %</th></tr></thead><tbody id="wl"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table></div></div>
+
+  <!-- ===== REPLACED: Portfolio panel now shows INDEXES (S&P500 / Nasdaq / Russell2000) ===== -->
+  <div class="panel" id="indicesPanel">
+    <div class="ph"><span class="pt">Major Indexes</span><div><button class="btn" id="idxR">⟲</button> <span id="idxTS" class="muted"></span></div></div>
+    <div class="pc">
+      <div class="index-grid">
+        <div class="index-card" id="idx_gspc">
+          <div class="index-meta"><div class="index-name">S&P 500 (GSPC)</div><div id="gspc_price" class="index-price">--</div><div id="gspc_ts" class="index-ts">--</div></div>
+          <div style="text-align:right"><div id="gspc_change" class="index-change muted">--</div></div>
+        </div>
+        <div class="index-card" id="idx_ixic">
+          <div class="index-meta"><div class="index-name">NASDAQ (IXIC)</div><div id="ixic_price" class="index-price">--</div><div id="ixic_ts" class="index-ts">--</div></div>
+          <div style="text-align:right"><div id="ixic_change" class="index-change muted">--</div></div>
+        </div>
+        <div class="index-card" id="idx_rut">
+          <div class="index-meta"><div class="index-name">Russell 2000 (RUT)</div><div id="rut_price" class="index-price">--</div><div id="rut_ts" class="index-ts">--</div></div>
+          <div style="text-align:right"><div id="rut_change" class="index-change muted">--</div></div>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px">Source: Yahoo Finance (via public quote endpoint). Uses regular market values; not a broker feed.</div>
+    </div>
+  </div>
+
+  <!-- ===== REPLACED: Quick Trade panel turned into Index details + small sparkline controls ===== -->
+  <div class="panel" id="idxDetailPanel">
+    <div class="ph"><span class="pt">Index Details</span></div>
+    <div class="pc">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div class="muted">S&P 500</div>
+          <div id="gspc_detail" class="muted">Loading…</div>
+        </div>
+        <div>
+          <div class="muted">NASDAQ</div>
+          <div id="ixic_detail" class="muted">Loading…</div>
+        </div>
+        <div>
+          <div class="muted">Russell 2000</div>
+          <div id="rut_detail" class="muted">Loading…</div>
+        </div>
+        <div style="align-self:center">
+          <button class="btn" id="idxHelp">Explain data</button>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px">Indexes update every 15s by default.</div>
+    </div>
+  </div>
+
+  <!-- Order Book (sim) -->
+  <div class="panel" id="orderBookPanel"><div class="ph"><span class="pt">Order Book</span><button class="btn" id="obR">⟲</button></div><div class="pc" id="ob"><span class="muted">Loading…</span></div></div>
+
+  <div class="panel"><div class="ph"><span class="pt">Recent Trades</span></div><div class="pc" id="rt"><div class="muted">Waiting…</div></div></div>
+  <div class="panel"><div class="ph"><span class="pt">News</span></div><div class="pc" id="news"><div class="muted">Sample headlines…</div></div></div>
+</div>
+
+<script>
+// --- existing config and helpers (kept from your file) ---
+const CFG={
+  W:['AAPL','MSFT','GOOGL','AMZN','TSLA','NVDA','META','BRK-B','V','JPM','JNJ','PG','DIS','NFLX','ORCL','PYPL','INTC','CSCO','PEP','NKE'],
+  I:{prices:10000,ob:15000,ticker:5000,chart:20000,news:60000,movers:60000,indices:15000},
+  R:2,
+  D:500
+};
+const S={sym:CFG.W[0],px:new Map(),chart:[],pos:[],tr:[],timers:{}};
+const $=q=>document.querySelector(q),$$=q=>document.querySelectorAll(q);
+const fmtN=(n,d=2)=>Number(n).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const setStat=(id,v,cls)=>{const el=$(id); if(!el)return; el.textContent=v; if(cls) el.className=cls;};
+
+// Time (keeps CST label you had)
+setInterval(()=>{const n=new Date(); const ct=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Chicago',hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(n); $('#t').textContent=ct+' CST/CDT';},1000);
+
+// fetch helper (keeps your proxy attempts)
+async function jget(u){const P=['','https://corsproxy.io/?']; for(const p of P){for(let i=0;i<CFG.R;i++){try{const r=await fetch(p?p+encodeURIComponent(u):u); if(!r.ok) throw 0; return await r.json();}catch(e){if(i<CFG.R-1) await new Promise(r=>setTimeout(r,CFG.D*(i+1)));}}} return null}
+
+// ----------------- existing functions (price, draw, ticker, etc.) -----------------
+// minimal implementations preserved from earlier edit to keep the page functional
+
+async function price(){
+  const sym = S.sym;
+  const u = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1d`;
+  let resp = await jget(u);
+  let p=null;
+  if(resp && resp.chart && resp.chart.result && resp.chart.result[0] && resp.chart.result[0].meta){
+    const meta = resp.chart.result[0].meta;
+    const priceVal = +meta.regularMarketPrice;
+    const prev = +(meta.chartPreviousClose ?? meta.previousClose ?? priceVal);
+    const chg = prev ? ((priceVal - prev)/prev * 100) : 0;
+    p = {price:priceVal, change:chg};
+  }
+  if(!p){
+    const base = S.px.get(sym) || {price:100, change:0};
+    const priceVal = base.price + (Math.random() - 0.5)*base.price*0.02;
+    const chg = (Math.random() - 0.5)*5;
+    p = {price:priceVal, change:chg};
+  }
+  S.px.set(sym,p);
+  setStat('#px',fmtN(p.price));
+  setStat('#chg',`${p.change>=0?'+':''}${p.change.toFixed(2)}%`,p.change>=0?'pos':'neg');
+  draw();
+}
+function draw(){
+  const c=$('#c');
+  const ctx=c.getContext('2d');
+  c.width=c.offsetWidth;
+  c.height=c.offsetHeight;
+  const base=(S.px.get(S.sym)||{price:100}).price;
+  if(!S.chart.length){
+    let b=base;
+    for(let i=0;i<50;i++){
+      const d=(Math.random()-.5)*b*.02, o=b, cl=b+d, h=Math.max(o,cl)+Math.random()*b*.01, l=Math.min(o,cl)-Math.random()*b*.01;
+      S.chart.push({o,h,l,cl});
+      b=cl;
+    }
+  }
+  ctx.fillStyle='#0a0a0a';
+  ctx.fillRect(0,0,c.width,c.height);
+  ctx.strokeStyle='rgba(255,255,255,.05)';
+  for(let x=0;x<c.width;x+=50){
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,c.height);
+    ctx.stroke();
+  }
+  for(let y=0;y<c.height;y+=30){
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(c.width,y);
+    ctx.stroke();
+  }
+  const w=c.width/S.chart.length;
+  const hi=Math.max(...S.chart.map(k=>k.h)), lo=Math.min(...S.chart.map(k=>k.l)), rng=hi-lo||1;
+  S.chart.forEach((k,i)=>{
+    const x=i*w+w/2, yo=c.height-((k.o-lo)/rng)*c.height*.8, yc=c.height-((k.cl-lo)/rng)*c.height*.8, yh=c.height-((k.h-lo)/rng)*c.height*.8, yl=c.height-((k.l-lo)/rng)*c.height*.8;
+    ctx.strokeStyle=k.cl>=k.o?'#00ff88':'#ff3366';
+    ctx.beginPath();ctx.moveTo(x,yh);ctx.lineTo(x,yl);ctx.stroke();
+    ctx.fillStyle=k.cl>=k.o?'#00ff88':'#ff3366';
+    const bh=Math.abs(yc-yo)||1;
+    ctx.fillRect(x-w*.3,Math.min(yo,yc),w*.6,bh);
+  });
+}
+
+async function ticker(){
+  const syms = CFG.W;
+  const u = `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${syms.join(',')}&range=1d&interval=1d`;
+  const d=await jget(u);
+  const mq=$('#mq');
+  mq.innerHTML='';
+  const dataObj={};
+  if(d && d.spark && d.spark.result){
+    d.spark.result.forEach(item=>{
+      const sym=item.symbol.toUpperCase();
+      const meta=item.response && item.response[0] && item.response[0].meta;
+      if(meta){
+        const price=+meta.regularMarketPrice;
+        const prev=+(meta.chartPreviousClose ?? meta.previousClose ?? price);
+        const chg=prev?((price-prev)/prev*100):0;
+        dataObj[sym]={price, change:chg};
+        S.px.set(sym,{price, change:chg});
+        const span=document.createElement('span');
+        span.innerHTML=`<b style="color:#00d4ff">${sym}</b> ${fmtN(price,2)} <span class="${chg>=0?'pos':'neg'}" style="padding:1px 4px;border-radius:3px">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`;
+        mq.appendChild(span);
+      }
+    });
+  }
+  if(Object.keys(dataObj).length===0){
+    syms.forEach(sym=>{
+      const base=S.px.get(sym)||{price:100, change:0};
+      const price=base.price + (Math.random()-0.5)*base.price*0.02;
+      const chg=(Math.random()-0.5)*5;
+      dataObj[sym]={price, change:chg};
+      S.px.set(sym,{price, change:chg});
+      const span=document.createElement('span');
+      span.innerHTML=`<b style="color:#00d4ff">${sym}</b> ${fmtN(price,2)} <span class="${chg>=0?'pos':'neg'}" style="padding:1px 4px;border-radius:3px">${chg>=0?'+':''}${chg.toFixed(2)}%</span>`;
+      mq.appendChild(span);
+    });
+  }
+  mq.innerHTML = mq.innerHTML + mq.innerHTML;
+  wl(dataObj);
+}
+function wl(d){
+  const tb=$('#wl');
+  tb.innerHTML='';
+  Object.entries(d).forEach(([k,v])=>{
+    const tr=document.createElement('tr');
+    const ch=+(v.change||0);
+    tr.innerHTML=`<td style="color:#00d4ff;cursor:pointer">${k}</td><td>${fmtN(v.price,2)}</td><td class="${ch>=0?'pos':'neg'}">${ch>=0?'+':''}${ch.toFixed(2)}%</td>`;
+    tr.firstChild.onclick=()=>{
+      S.sym=k;
+      S.chart=[];
+      $('#ct').textContent=k;
+      $('#sym').textContent=k;
+      price();
+    };
+    tb.appendChild(tr);
+  });
+}
+function ob(){
+  const base=(S.px.get(S.sym)||{price:100}).price;
+  const mk=(p,a)=>({p,a,t:p*a});
+  const asks=[1,2,3,4,5].map(i=>mk(base+i*base*.0001,Math.random()*2));
+  const bids=[1,2,3,4,5].map(i=>mk(base-i*base*.0001,Math.random()*2));
+  const sp=asks[0].p - bids[0].p;
+  const row=x=>`<tr><td>${x.a.toFixed(4)}</td><td>${x.p.toFixed(2)}</td><td>${x.t.toFixed(2)}</td></tr>`;
+  $('#ob').innerHTML=`<table class="tbl"><thead><tr><th>Amount</th><th>Price</th><th>Total</th></tr></thead><tbody>${asks.slice().reverse().map(row).join('')}<tr><td colspan="3" class="muted">Spread: ${sp.toFixed(2)}</td></tr>${bids.map(row).join('')}</tbody></table>`;
+}
+async function movers(){
+  try{
+    const t=await jget('https://query1.finance.yahoo.com/v1/finance/trending/US');
+    let symbols=[];
+    if(t && t.finance && t.finance.result && t.finance.result[0] && t.finance.result[0].quotes){
+      symbols = t.finance.result[0].quotes.map(q=>q.symbol).filter(s => /^[A-Z.\-]+$/.test(s) && !s.includes('USD'));
+    }
+    if(symbols.length<10) symbols = [...CFG.W];
+    symbols = symbols.slice(0,30);
+    const u=`https://query1.finance.yahoo.com/v7/finance/spark?symbols=${symbols.join(',')}&range=1d&interval=1d`;
+    let d=await jget(u);
+    let rows=[];
+    if(d && d.spark && d.spark.result){
+      d.spark.result.forEach(item=>{
+        const sym=item.symbol.toUpperCase();
+        const meta=item.response && item.response[0] && item.response[0].meta;
+        if(meta){
+          const price=+meta.regularMarketPrice;
+          const prev=+(meta.chartPreviousClose ?? meta.previousClose ?? price);
+          const chg=prev?((price-prev)/prev*100):0;
+          if(Number.isFinite(price) && Number.isFinite(chg)){
+            rows.push({s:sym,p:price,c:chg});
+          }
+        }
+      });
+    }
+    if(!rows.length){
+      rows = CFG.W.map(sym=>{
+        const v=S.px.get(sym)||{price:0, change:0};
+        return {s:sym,p:v.price||0,c:v.change||0};
+      });
+    }
+    const G=rows.slice().sort((a,b)=>b.c-a.c).slice(0,10);
+    const L=rows.slice().sort((a,b)=>a.c-b.c).slice(0,10);
+    const paint=(id,list)=>{
+      const tb=$(id);
+      tb.innerHTML=list.map(r=>`<tr><td style="color:#00d4ff">${r.s}</td><td>${fmtN(r.p,2)}</td><td class="${r.c>=0?'pos':'neg'}">${r.c>=0?'+':''}${(r.c||0).toFixed(2)}%</td></tr>`).join('');
+    };
+    paint('#gain',G);
+    paint('#loss',L);
+    $('#mvTS').textContent='Updated '+new Date().toLocaleTimeString();
+  }catch(e){}
+}
+function trades(){
+  const baseObj = S.px.get(S.sym) || {price: 100};
+  const base = baseObj.price;
+  const trade = { tm: new Date().toLocaleTimeString(), p: (base + (Math.random() - 0.5) * base * 0.001).toFixed(2), a: (Math.random() * 2).toFixed(4), sd: Math.random() > 0.5 ? 'BUY' : 'SELL' };
+  const d = document.createElement('div');
+  d.innerHTML = `<div style="display:flex;justify-content:space-between"><span class="muted">${trade.tm}</span><span class="${trade.sd==='BUY'?'pos':'neg'}">${trade.a} @ ${trade.p}</span></div>`;
+  const container = $('#rt');
+  container.prepend(d);
+  while (container.children.length > 10) container.removeChild(container.lastChild);
+}
+function news(){
+  const headlines = [ 'S&P 500 edges higher amid earnings reports', 'Tech stocks rally as interest rates dip', 'Investor sentiment improves after strong jobs data' ];
+  $('#news').innerHTML = headlines.map((txt, idx) => { const time = idx ? (idx*5)+' min ago' : 'Just now'; return `<div style="padding:6px;border-bottom:1px solid rgba(255,255,255,.05)"><div class="muted">${time}</div><div>${txt}</div></div>`; }).join('');
+}
+
+// Toast and basic handlers
+function toast(m){const d=document.createElement('div'); d.style.cssText='position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:4px;border:1px solid rgba(0,255,136,.3);color:#00ff88;background:rgba(0,255,136,.08);z-index:999'; d.textContent=m; document.body.appendChild(d); setTimeout(()=>d.remove(),2200)}
+$$('[data-int]').forEach(b=>b.onclick=()=>{S.chart=[]; draw()}); $('#obR').onclick=ob; $('#wlR').onclick=ticker; $('#mvR').onclick=movers; $('#otype')?.onchange&&($('#otype').onchange=e=>$('#lpx').style.display=e.target.value==='limit'?'block':'none'); $('#symSel')?.onchange&&( $('#symSel').onchange=e=>{S.sym=e.target.value; S.chart=[]; $('#ct').textContent=e.target.options[e.target.selectedIndex].text; $('#sym').textContent=e.target.options[e.target.selectedIndex].text; price(); ob();});
+
+// --- Indices: NEW code to fetch S&P 500 (^GSPC), NASDAQ (^IXIC), RUSSELL2000 (^RUT) ---
+const INDICES = [
+  {key:'GSPC', label:'S&P 500', symbol:'^GSPC', elPrice:'#gspc_price', elChange:'#gspc_change', elTs:'#gspc_ts', elDetail:'#gspc_detail'},
+  {key:'IXIC', label:'NASDAQ', symbol:'^IXIC', elPrice:'#ixic_price', elChange:'#ixic_change', elTs:'#ixic_ts', elDetail:'#ixic_detail'},
+  {key:'RUT',  label:'Russell 2000', symbol:'^RUT',  elPrice:'#rut_price',  elChange:'#rut_change',  elTs:'#rut_ts',  elDetail:'#rut_detail'}
+];
+
+// fetch indices using Yahoo quotes endpoint
+async function fetchIndices(){
+  // build symbol list and call quote endpoint
+  const syms = INDICES.map(i=>i.symbol).join(',');
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(syms)}`;
+  const data = await jget(url);
+  const now = new Date();
+  const ts = now.toLocaleTimeString();
+  if(data && data.quoteResponse && data.quoteResponse.result){
+    const res = data.quoteResponse.result;
+    // map by symbol (without caret when necessary)
+    const map = {};
+    res.forEach(r=>{
+      // sometimes Yahoo returns 'symbol' like '^GSPC' or '^IXIC'
+      map[r.symbol] = r;
+    });
+    INDICES.forEach(idx=>{
+      const r = map[idx.symbol] || map[idx.symbol.replace('^','')];
+      if(r){
+        const price = Number(r.regularMarketPrice ?? r.bid ?? r.open ?? 0);
+        const changePct = Number(r.regularMarketChangePercent ?? ((r.regularMarketChange && r.regularMarketPreviousClose) ? (r.regularMarketChange / r.regularMarketPreviousClose * 100) : 0));
+        const changeVal = Number(r.regularMarketChange ?? 0);
+        // Update UI
+        setStat(idx.elPrice, fmtN(price,2));
+        const cls = (changePct>=0)?'pos':'neg';
+        setStat(idx.elChange, `${changePct>=0?'+':''}${changePct.toFixed(2)}%`, cls);
+        setStat(idx.elTs, ts);
+        setStat(idx.elDetail, `Last: ${fmtN(price,2)} | Δ ${changeVal>=0?'+':''}${changeVal.toFixed(2)} (${changePct>=0?'+':''}${changePct.toFixed(2)}%) at ${ts}`);
+      } else {
+        // fallback: keep previous or show N/A
+        setStat(idx.elPrice, '--');
+        setStat(idx.elChange, '--', 'muted');
+        setStat(idx.elTs, '--');
+        setStat(idx.elDetail, 'No data');
+      }
+    });
+  } else {
+    // fallback to synthetic if Yahoo endpoint not reachable
+    INDICES.forEach(idx=>{
+      const prev = parseFloat($(idx.elPrice)?.textContent) || 1000;
+      const price = prev * (1 + (Math.random()-0.5)*0.002);
+      const changePct = ((price - prev)/prev)*100;
+      setStat(idx.elPrice, fmtN(price,2));
+      setStat(idx.elChange, `${changePct>=0?'+':''}${changePct.toFixed(2)}%`, changePct>=0?'pos':'neg');
+      setStat(idx.elTs, ts);
+      setStat(idx.elDetail, `Simulated: ${fmtN(price,2)} (${changePct>=0?'+':''}${changePct.toFixed(2)}%)`);
+    });
+  }
+  $('#idxTS').textContent = 'Updated '+ts;
+}
+
+// Boot: initial loads and intervals (including indices)
+(async()=>{
+  await ticker();
+  await price();
+  ob();
+  movers();
+  news();
+  await fetchIndices(); // initial indices fetch
+  S.timers.p=setInterval(price,CFG.I.prices);
+  S.timers.t=setInterval(ticker,CFG.I.ticker);
+  S.timers.o=setInterval(ob,CFG.I.ob);
+  S.timers.m=setInterval(movers,CFG.I.movers);
+  S.timers.r=setInterval(trades,CFG.I.trades);
+  S.timers.n=setInterval(news,CFG.I.news);
+  S.timers.i=setInterval(fetchIndices,CFG.I.indices); // indices polling
+})();
+</script>
+</body></html>
