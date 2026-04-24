@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ships & News</title>
+  <style>
+    :root { --bg:#08121f; --panel:#0f1d31; --line:#23354e; --text:#e8f1ff; --muted:#9ab0d1; --cyan:#34d7ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+    header { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    h1 { margin:0; font-size:1.2rem; }
+    a { color:var(--cyan); text-decoration:none; }
+    main { padding:20px; display:grid; gap:16px; grid-template-columns:2fr 1fr; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    .panel h2 { margin:0; padding:12px 14px; border-bottom:1px solid var(--line); font-size:1rem; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:.92rem; }
+    th { color:var(--muted); font-weight:600; }
+    ul { margin:0; padding:8px 14px 14px 28px; }
+    li { margin:8px 0; line-height:1.4; }
+    .muted { color:var(--muted); }
+    @media (max-width: 900px) { main { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚢 Ships & Maritime News</h1>
+    <nav>
+      <a href="index.html">← Landing</a> ·
+      <a href="adsb.html">Go to ADSB</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Ships</h2>
+      <table>
+        <thead>
+          <tr><th>Vessel</th><th>MMSI</th><th>Speed</th><th>Course</th><th>Status</th></tr>
+        </thead>
+        <tbody id="shipsBody">
+          <tr><td>Atlantic Trader</td><td>366991234</td><td>14.2 kn</td><td>078°</td><td>Underway</td></tr>
+          <tr><td>Pacific Dawn</td><td>235778901</td><td>0.1 kn</td><td>—</td><td>At anchor</td></tr>
+          <tr><td>Blue Horizon</td><td>563440221</td><td>11.8 kn</td><td>211°</td><td>Underway</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="padding:10px 12px;">Tip: wire this table to your AIS API when ready.</p>
+    </section>
+
+    <aside class="panel">
+      <h2>Maritime News</h2>
+      <ul>
+        <li>Port authority extends night berthing window for cargo traffic.</li>
+        <li>Weather routing advisory issued for North Atlantic lanes.</li>
+        <li>Container freight rates stable ahead of next quarter contracts.</li>
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>

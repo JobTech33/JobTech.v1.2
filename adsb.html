@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADSB Tracking</title>
+  <style>
+    :root { --bg:#090f1c; --panel:#131d34; --line:#2a3553; --text:#edf3ff; --muted:#9eadd1; --accent:#8fb6ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; }
+    header { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+    h1 { margin:0; font-size:1.2rem; }
+    nav a { color:var(--accent); text-decoration:none; }
+    main { padding:20px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    .panel h2 { margin:0; padding:12px 14px; border-bottom:1px solid var(--line); font-size:1rem; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.06); text-align:left; font-size:.92rem; }
+    th { color:var(--muted); font-weight:600; }
+    .tag { display:inline-block; padding:3px 7px; border:1px solid #4b5f8c; border-radius:99px; font-size:.76rem; color:#bdd0ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛩️ ADS-B Aircraft Tracking</h1>
+    <nav>
+      <a href="index.html">← Landing</a> ·
+      <a href="ships-news.html">Go to Ships & News</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Live Flights</h2>
+      <table>
+        <thead>
+          <tr><th>Callsign</th><th>Hex</th><th>Altitude</th><th>Ground Speed</th><th>Heading</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>DAL143</td><td>A1B2C3</td><td>34,000 ft</td><td>455 kt</td><td>090°</td><td><span class="tag">Cruise</span></td></tr>
+          <tr><td>UAL77</td><td>AC91FE</td><td>11,500 ft</td><td>215 kt</td><td>264°</td><td><span class="tag">Climb</span></td></tr>
+          <tr><td>NKS541</td><td>AB44D2</td><td>3,200 ft</td><td>168 kt</td><td>315°</td><td><span class="tag">Approach</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
