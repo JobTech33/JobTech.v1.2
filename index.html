@@ -666,7 +666,7 @@
             <div class="nav-item" data-view="risk">RISK</div>
         </nav>
         <div class="header-right">
-            <div class="time-display" id="time">00:00:00 UTC</div>
+            <div class="time-display" id="time">00:00:00 UTC  |  00:00:00 CST</div>
             <div class="connection-status" id="connectionStatus"></div>
             <div class="user-info">
                 <span style="font-size: 12px;" id="connectionText">LIVE</span>
@@ -884,8 +884,8 @@
                 news: 60000         // 1 minute
             },
             WATCHLIST: ['bitcoin', 'ethereum', 'solana', 'binancecoin', 'cardano', 'ripple'],
-            MAX_RETRIES: 2,  // Reduced for faster fallback
-            RETRY_DELAY: 500  // Reduced delay
+            MAX_RETRIES: 2,
+            RETRY_DELAY: 500
         };
 
         // ============= GLOBAL STATE =============
@@ -906,36 +906,27 @@
         document.addEventListener('DOMContentLoaded', initializeApp);
 
         async function initializeApp() {
-            console.log('🚀 Initializing BUMBERA Terminal...');
-            
             setupEventListeners();
             startClock();
-            
-            // Start with simulated data immediately for better UX
             showInitialSimulatedData();
-            
-            // Then try to load real data in background
+
             setTimeout(async () => {
                 try {
                     await loadInitialData();
                     startDataFeeds();
                     updateConnectionStatus('online');
-                    console.log('✅ Live data connection established');
                 } catch (error) {
-                    console.warn('⚠️ Using simulated data mode:', error.message);
                     updateConnectionStatus('offline');
                     startSimulatedDataFeeds();
                 }
             }, 100);
         }
-        
-        // Show immediate simulated data for instant feedback
+
         function showInitialSimulatedData() {
-            // Generate initial data
             const initialData = {};
             CONFIG.WATCHLIST.forEach(symbol => {
                 initialData[symbol] = {
-                    usd: { 
+                    usd: {
                         bitcoin: 42000, ethereum: 2200, solana: 95,
                         binancecoin: 320, cardano: 0.5, ripple: 0.6
                     }[symbol] || 100,
@@ -943,30 +934,21 @@
                 };
                 state.priceCache.set(symbol, initialData[symbol]);
             });
-            
-            // Update UI immediately
+
             updateTicker(initialData);
             updateWatchlist(initialData);
-            
-            // Set initial chart data
+
             if (initialData[state.currentSymbol]) {
                 updateChartDisplay(initialData[state.currentSymbol]);
                 updateChart();
             }
-            
-            // Load order book
+
             const orderBookData = generateOrderBook();
             displayOrderBook(orderBookData);
-            
-            // Load news
             loadNews();
         }
-        
-        // Simulated data feeds for offline mode
+
         function startSimulatedDataFeeds() {
-            console.log('📊 Running in simulated mode');
-            
-            // Simulate price updates
             state.updateTimers.simPrices = setInterval(() => {
                 const data = generateLiveData();
                 if (data[state.currentSymbol]) {
@@ -974,8 +956,7 @@
                     updateChart();
                 }
             }, 5000);
-            
-            // Simulate ticker updates
+
             state.updateTimers.simTicker = setInterval(() => {
                 const tickerData = {};
                 CONFIG.WATCHLIST.forEach(symbol => {
@@ -989,18 +970,15 @@
                 updateTicker(tickerData);
                 updateWatchlist(tickerData);
             }, 3000);
-            
-            // Simulate trades
+
             state.updateTimers.simTrades = setInterval(updateRecentTrades, 2000);
-            
-            // Simulate order book
             state.updateTimers.simOrderBook = setInterval(() => {
                 const orderBookData = generateOrderBook();
                 displayOrderBook(orderBookData);
             }, 5000);
         }
 
-        // ============= CLOCK =============
+        // ============= CLOCK (UTC + CST/CDT) =============
         function startClock() {
             updateTime();
             setInterval(updateTime, 1000);
@@ -1008,20 +986,32 @@
 
         function updateTime() {
             const now = new Date();
-            const hours = String(now.getUTCHours()).padStart(2, '0');
-            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
-            document.getElementById('time').textContent = `${hours}:${minutes}:${seconds} UTC`;
+            const utc = `${pad(now.getUTCHours())}:${pad(now.getUTCMinutes())}:${pad(now.getUTCSeconds())}`;
+
+            const ct = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'America/Chicago',
+                hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+            }).format(now);
+
+            const tzParts = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Chicago',
+                timeZoneName: 'shortOffset'
+            }).formatToParts(now);
+            const abbr = (tzParts.find(p => p.type === 'timeZoneName')?.value || '').includes('-5') ? 'CDT' : 'CST';
+
+            const el = document.getElementById('time');
+            if (el) el.textContent = `${utc} UTC  |  ${ct} ${abbr}`;
         }
+        function pad(n){ return String(n).padStart(2,'0'); }
 
         // ============= CONNECTION STATUS =============
         function updateConnectionStatus(status) {
             state.connectionStatus = status;
             const indicator = document.getElementById('connectionStatus');
             const text = document.getElementById('connectionText');
-            
+
             indicator.className = 'connection-status';
-            
+
             switch(status) {
                 case 'online':
                     indicator.classList.add('online');
@@ -1040,53 +1030,32 @@
 
         // ============= API HELPERS =============
         async function fetchWithProxy(url, retries = CONFIG.MAX_RETRIES) {
-            // Try multiple CORS proxies and direct fetch
             const proxies = [
-                '', // Try direct first (might work for some APIs)
+                '',
                 'https://corsproxy.io/?',
                 'https://api.allorigins.win/raw?url=',
                 'https://cors-anywhere.herokuapp.com/'
             ];
-            
+
             for (const proxy of proxies) {
                 for (let i = 0; i < retries; i++) {
                     try {
                         const finalUrl = proxy ? `${proxy}${encodeURIComponent(url)}` : url;
-                        const response = await fetch(finalUrl, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json',
-                            }
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
-                        const data = await response.json();
-                        return data;
-                    } catch (error) {
-                        console.warn(`Attempt ${i + 1} with proxy ${proxy || 'direct'} failed:`, error.message);
-                        
-                        if (i < retries - 1) {
-                            await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY * (i + 1)));
-                        }
+                        const response = await fetch(finalUrl, { method: 'GET', headers: { 'Accept': 'application/json' } });
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        return await response.json();
+                    } catch (err) {
+                        if (i < retries - 1) await new Promise(r => setTimeout(r, CONFIG.RETRY_DELAY * (i + 1)));
                     }
                 }
             }
-            
-            // If all proxies fail, return mock data
-            console.warn('All API attempts failed, using fallback data');
             return getFallbackData(url);
         }
-        
-        // Fallback data generator
+
         function getFallbackData(url) {
             if (url.includes('coingecko') && url.includes('simple/price')) {
-                // Generate realistic crypto prices
                 const symbols = ['bitcoin', 'ethereum', 'solana', 'binancecoin', 'cardano', 'ripple'];
                 const data = {};
-                
                 symbols.forEach(symbol => {
                     const basePrice = {
                         bitcoin: 42000 + Math.random() * 2000,
@@ -1095,18 +1064,15 @@
                         binancecoin: 320 + Math.random() * 20,
                         cardano: 0.5 + Math.random() * 0.1,
                         ripple: 0.6 + Math.random() * 0.1
-                    };
-                    
+                    }[symbol] || 100;
                     data[symbol] = {
-                        usd: basePrice[symbol] || 100,
+                        usd: basePrice,
                         usd_24h_change: (Math.random() - 0.5) * 10,
-                        usd_24h_vol: Math.random() * 1000000000
+                        usd_24h_vol: Math.random() * 1e9
                     };
                 });
-                
                 return data;
             }
-            
             return {};
         }
 
@@ -1122,10 +1088,7 @@
         }
 
         function startDataFeeds() {
-            // Clear existing timers
-            Object.values(state.updateTimers).forEach(timer => clearInterval(timer));
-            
-            // Start new update intervals
+            Object.values(state.updateTimers).forEach(clearInterval);
             state.updateTimers.prices = setInterval(fetchPriceData, CONFIG.UPDATE_INTERVALS.prices);
             state.updateTimers.orderBook = setInterval(loadOrderBook, CONFIG.UPDATE_INTERVALS.orderBook);
             state.updateTimers.ticker = setInterval(fetchMarketTicker, CONFIG.UPDATE_INTERVALS.ticker);
@@ -1136,7 +1099,6 @@
         // ============= PRICE DATA =============
         async function fetchPriceData() {
             try {
-                // Use alternative API endpoints
                 const apis = [
                     {
                         name: 'CoinGecko',
@@ -1145,61 +1107,35 @@
                     {
                         name: 'CoinCap',
                         url: `https://api.coincap.io/v2/assets/${state.currentSymbol}`,
-                        transform: (data) => {
-                            if (data.data) {
-                                return {
-                                    [state.currentSymbol]: {
-                                        usd: parseFloat(data.data.priceUsd),
-                                        usd_24h_change: parseFloat(data.data.changePercent24Hr),
-                                        usd_24h_vol: parseFloat(data.data.volumeUsd24Hr)
-                                    }
-                                };
+                        transform: (d) => d.data ? ({
+                            [state.currentSymbol]: {
+                                usd: parseFloat(d.data.priceUsd),
+                                usd_24h_change: parseFloat(d.data.changePercent24Hr),
+                                usd_24h_vol: parseFloat(d.data.volumeUsd24Hr)
                             }
-                            return null;
-                        }
+                        }) : null
                     }
                 ];
-                
+
                 let data = null;
-                
                 for (const api of apis) {
                     try {
-                        console.log(`Trying ${api.name} API...`);
-                        const response = await fetchWithProxy(api.url);
-                        
-                        if (api.transform) {
-                            data = api.transform(response);
-                        } else {
-                            data = response;
-                        }
-                        
-                        if (data && data[state.currentSymbol]) {
-                            console.log(`✅ Successfully fetched from ${api.name}`);
-                            break;
-                        }
-                    } catch (error) {
-                        console.warn(`${api.name} failed:`, error.message);
-                    }
+                        const resp = await fetchWithProxy(api.url);
+                        data = api.transform ? api.transform(resp) : resp;
+                        if (data && data[state.currentSymbol]) break;
+                    } catch {}
                 }
-                
-                // If no API worked, generate realistic mock data
-                if (!data || !data[state.currentSymbol]) {
-                    console.log('Using simulated live data...');
-                    data = generateLiveData();
-                }
-                
-                if (data && data[state.currentSymbol]) {
-                    const priceData = data[state.currentSymbol];
-                    state.priceCache.set(state.currentSymbol, priceData);
-                    updateChartDisplay(priceData);
-                    updateChart();
-                    updateConnectionStatus('online');
-                }
-            } catch (error) {
-                console.error('Failed to fetch price data:', error);
-                // Use simulated data as fallback
+
+                if (!data || !data[state.currentSymbol]) data = generateLiveData();
+
+                const priceData = data[state.currentSymbol];
+                state.priceCache.set(state.currentSymbol, priceData);
+                updateChartDisplay(priceData);
+                updateChart();
+                updateConnectionStatus('online');
+            } catch {
                 const data = generateLiveData();
-                if (data && data[state.currentSymbol]) {
+                if (data[state.currentSymbol]) {
                     state.priceCache.set(state.currentSymbol, data[state.currentSymbol]);
                     updateChartDisplay(data[state.currentSymbol]);
                     updateChart();
@@ -1207,24 +1143,20 @@
                 updateConnectionStatus('offline');
             }
         }
-        
-        // Generate realistic live data simulation
+
         function generateLiveData() {
             const baseData = state.priceCache.get(state.currentSymbol) || {
                 usd: { bitcoin: 42000, ethereum: 2200, solana: 95, binancecoin: 320 }[state.currentSymbol] || 100
             };
-            
-            // Simulate realistic price movement
-            const volatility = 0.002; // 0.2% volatility
+            const volatility = 0.002;
             const trend = Math.random() > 0.5 ? 1 : -1;
             const change = (Math.random() * volatility * trend);
             const newPrice = baseData.usd * (1 + change);
-            
             return {
                 [state.currentSymbol]: {
                     usd: newPrice,
                     usd_24h_change: (Math.random() - 0.5) * 5,
-                    usd_24h_vol: Math.random() * 1000000000
+                    usd_24h_vol: Math.random() * 1e9
                 }
             };
         }
@@ -1232,17 +1164,16 @@
         function updateChartDisplay(data) {
             const priceElement = document.getElementById('chartPrice');
             const changeElement = document.getElementById('chartChange');
-            
+
             const price = data.usd || 0;
             const change = data.usd_24h_change || 0;
-            
-            priceElement.textContent = `${price.toLocaleString(undefined, { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
+
+            priceElement.textContent = `${price.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             })}`;
-            
+
             priceElement.style.color = change >= 0 ? '#00ff88' : '#ff3366';
-            
             const changePrefix = change >= 0 ? '+' : '';
             changeElement.textContent = `${changePrefix}${change.toFixed(2)}%`;
             changeElement.className = change >= 0 ? 'chart-change positive' : 'chart-change negative';
@@ -1252,54 +1183,38 @@
         function updateChart() {
             const canvas = document.getElementById('priceChart');
             if (!canvas) return;
-            
+
             const ctx = canvas.getContext('2d');
-            
-            // Set canvas size
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-            
-            // Clear canvas
+
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid
+
             drawGrid(ctx, canvas.width, canvas.height);
-            
-            // Generate or update chart data
+
             if (state.chartData.length === 0) {
                 generateChartData();
             }
-            
-            // Draw candlesticks
+
             drawCandlesticks(ctx, canvas.width, canvas.height);
         }
 
         function drawGrid(ctx, width, height) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
             ctx.lineWidth = 1;
-            
-            // Vertical lines
             for (let i = 0; i < width; i += 50) {
-                ctx.beginPath();
-                ctx.moveTo(i, 0);
-                ctx.lineTo(i, height);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
             }
-            
-            // Horizontal lines
             for (let i = 0; i < height; i += 30) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(width, i);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
             }
         }
 
         function generateChartData() {
             const cachedPrice = state.priceCache.get(state.currentSymbol);
             let basePrice = cachedPrice?.usd || 40000;
-            
+
             state.chartData = [];
             for (let i = 0; i < 50; i++) {
                 const change = (Math.random() - 0.5) * basePrice * 0.02;
@@ -1307,7 +1222,7 @@
                 const close = basePrice + change;
                 const high = Math.max(open, close) + Math.random() * basePrice * 0.01;
                 const low = Math.min(open, close) - Math.random() * basePrice * 0.01;
-                
+
                 state.chartData.push({ open, high, low, close });
                 basePrice = close;
             }
@@ -1315,30 +1230,28 @@
 
         function drawCandlesticks(ctx, width, height) {
             if (state.chartData.length === 0) return;
-            
+
             const candleWidth = width / state.chartData.length;
             const prices = state.chartData.flatMap(c => [c.high, c.low]);
             const minPrice = Math.min(...prices);
             const maxPrice = Math.max(...prices);
             const priceRange = maxPrice - minPrice;
-            
+
             state.chartData.forEach((candle, i) => {
                 const x = i * candleWidth + candleWidth / 2;
-                
+
                 const yOpen = height - ((candle.open - minPrice) / priceRange) * height * 0.8;
                 const yClose = height - ((candle.close - minPrice) / priceRange) * height * 0.8;
                 const yHigh = height - ((candle.high - minPrice) / priceRange) * height * 0.8;
                 const yLow = height - ((candle.low - minPrice) / priceRange) * height * 0.8;
-                
-                // Draw wick
+
                 ctx.strokeStyle = candle.close > candle.open ? '#00ff88' : '#ff3366';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(x, yHigh);
                 ctx.lineTo(x, yLow);
                 ctx.stroke();
-                
-                // Draw body
+
                 ctx.fillStyle = candle.close > candle.open ? '#00ff88' : '#ff3366';
                 const bodyHeight = Math.abs(yClose - yOpen) || 1;
                 const bodyY = Math.min(yOpen, yClose);
@@ -1351,16 +1264,11 @@
             try {
                 const symbols = CONFIG.WATCHLIST.join(',');
                 let data = null;
-                
-                // Try fetching from API
                 try {
                     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${symbols}&vs_currencies=usd&include_24hr_change=true`;
                     data = await fetchWithProxy(url);
-                } catch (error) {
-                    console.warn('API fetch failed, using simulated ticker data');
-                }
-                
-                // If API fails or returns no data, generate ticker data
+                } catch {}
+
                 if (!data || Object.keys(data).length === 0) {
                     data = {};
                     CONFIG.WATCHLIST.forEach(symbol => {
@@ -1369,18 +1277,15 @@
                             bitcoin: 42000, ethereum: 2200, solana: 95,
                             binancecoin: 320, cardano: 0.5, ripple: 0.6
                         }[symbol] || 100;
-                        
+
                         data[symbol] = {
                             usd: basePrice * (1 + (Math.random() - 0.5) * 0.01),
                             usd_24h_change: (Math.random() - 0.5) * 10
                         };
                     });
                 }
-                
                 updateTicker(data);
-            } catch (error) {
-                console.error('Failed to fetch ticker data:', error);
-                // Generate fallback ticker
+            } catch {
                 const fallbackData = {};
                 CONFIG.WATCHLIST.forEach(symbol => {
                     fallbackData[symbol] = {
@@ -1395,17 +1300,13 @@
         function updateTicker(data) {
             const tickerContent = document.getElementById('tickerContent');
             tickerContent.innerHTML = '';
-            
-            // Create double set for continuous scroll
             for (let i = 0; i < 2; i++) {
                 Object.entries(data).forEach(([symbol, info]) => {
                     const item = document.createElement('div');
                     item.className = 'ticker-item';
-                    
                     const displaySymbol = symbol.toUpperCase().slice(0, 4);
                     const price = info.usd || 0;
                     const change = info.usd_24h_change || 0;
-                    
                     item.innerHTML = `
                         <span class="ticker-symbol">${displaySymbol}</span>
                         <span class="ticker-price">${price.toLocaleString()}</span>
@@ -1413,7 +1314,6 @@
                             ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
                         </span>
                     `;
-                    
                     tickerContent.appendChild(item);
                 });
             }
@@ -1422,20 +1322,14 @@
         // ============= WATCHLIST =============
         async function loadWatchlist() {
             const watchlistBody = document.getElementById('watchlistBody');
-            
             try {
                 const symbols = CONFIG.WATCHLIST.join(',');
                 let data = null;
-                
-                // Try API first
                 try {
                     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${symbols}&vs_currencies=usd&include_24hr_change=true`;
                     data = await fetchWithProxy(url);
-                } catch (error) {
-                    console.warn('Watchlist API failed, using simulated data');
-                }
-                
-                // Generate data if API failed
+                } catch {}
+
                 if (!data || Object.keys(data).length === 0) {
                     data = {};
                     CONFIG.WATCHLIST.forEach(symbol => {
@@ -1448,29 +1342,21 @@
                             cardano: 0.5 + Math.random() * 0.05,
                             ripple: 0.6 + Math.random() * 0.05
                         }[symbol] || 100;
-                        
-                        // Add small variation to make it look live
                         const variation = (Math.random() - 0.5) * 0.01;
                         data[symbol] = {
                             usd: basePrice * (1 + variation),
                             usd_24h_change: (Math.random() - 0.5) * 8
                         };
-                        
-                        // Cache the generated data
                         state.priceCache.set(symbol, data[symbol]);
                     });
                 }
-                
                 updateWatchlist(data);
-            } catch (error) {
-                console.error('Failed to load watchlist:', error);
+            } catch {
                 watchlistBody.innerHTML = `
                     <tr><td colspan="3" style="text-align: center; color: #888;">
                         Using simulated data (API unavailable)
                     </td></tr>
                 `;
-                
-                // Still show simulated data
                 const simulatedData = {};
                 CONFIG.WATCHLIST.forEach(symbol => {
                     simulatedData[symbol] = {
@@ -1478,7 +1364,6 @@
                         usd_24h_change: (Math.random() - 0.5) * 10
                     };
                 });
-                
                 setTimeout(() => updateWatchlist(simulatedData), 1000);
             }
         }
@@ -1486,16 +1371,15 @@
         function updateWatchlist(data) {
             const watchlistBody = document.getElementById('watchlistBody');
             watchlistBody.innerHTML = '';
-            
             Object.entries(data).forEach(([symbol, info]) => {
                 const row = document.createElement('tr');
                 row.style.cursor = 'pointer';
                 row.onclick = () => selectSymbol(symbol);
-                
+
                 const displaySymbol = symbol.toUpperCase().slice(0, 4);
                 const price = info.usd || 0;
                 const change = info.usd_24h_change || 0;
-                
+
                 row.innerHTML = `
                     <td style="color: #00d4ff;">${displaySymbol}</td>
                     <td>${price.toLocaleString()}</td>
@@ -1503,7 +1387,6 @@
                         ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
                     </td>
                 `;
-                
                 watchlistBody.appendChild(row);
             });
         }
@@ -1512,7 +1395,7 @@
             state.currentSymbol = symbol;
             document.getElementById('chartTitle').textContent = symbol.toUpperCase();
             document.getElementById('chartSymbol').textContent = symbol.toUpperCase();
-            state.chartData = []; // Reset chart data
+            state.chartData = [];
             fetchPriceData();
             loadOrderBook();
         }
@@ -1520,13 +1403,10 @@
         // ============= ORDER BOOK =============
         async function loadOrderBook() {
             const container = document.getElementById('orderBookContainer');
-            
             try {
-                // Generate sample order book data (since real order book requires authenticated API)
                 const orderBookData = generateOrderBook();
                 displayOrderBook(orderBookData);
-            } catch (error) {
-                console.error('Failed to load order book:', error);
+            } catch {
                 container.innerHTML = '<div class="error">Failed to load order book</div>';
             }
         }
@@ -1534,34 +1414,18 @@
         function generateOrderBook() {
             const cachedPrice = state.priceCache.get(state.currentSymbol);
             const basePrice = cachedPrice?.usd || 40000;
-            
-            const asks = [];
-            const bids = [];
-            
+            const asks = [], bids = [];
             for (let i = 1; i <= 5; i++) {
-                asks.push({
-                    price: basePrice + (i * basePrice * 0.0001),
-                    amount: Math.random() * 2,
-                    total: 0
-                });
-                
-                bids.push({
-                    price: basePrice - (i * basePrice * 0.0001),
-                    amount: Math.random() * 2,
-                    total: 0
-                });
+                asks.push({ price: basePrice + (i * basePrice * 0.0001), amount: Math.random() * 2, total: 0 });
+                bids.push({ price: basePrice - (i * basePrice * 0.0001), amount: Math.random() * 2, total: 0 });
             }
-            
-            // Calculate totals
-            asks.forEach(ask => ask.total = ask.price * ask.amount);
-            bids.forEach(bid => bid.total = bid.price * bid.amount);
-            
+            asks.forEach(a => a.total = a.price * a.amount);
+            bids.forEach(b => b.total = b.price * b.amount);
             return { asks, bids };
         }
 
         function displayOrderBook(data) {
             const container = document.getElementById('orderBookContainer');
-            
             let html = `
                 <div class="order-book-header">
                     <span>Amount</span>
@@ -1569,8 +1433,6 @@
                     <span>Total</span>
                 </div>
             `;
-            
-            // Display asks (reversed)
             const asksHtml = data.asks.reverse().map(ask => `
                 <div class="order-row ask-row">
                     <span style="color: #ff3366;">${ask.amount.toFixed(4)}</span>
@@ -1578,11 +1440,7 @@
                     <span>${ask.total.toFixed(2)}</span>
                 </div>
             `).join('');
-            
-            // Calculate spread
             const spread = data.asks[data.asks.length - 1].price - data.bids[0].price;
-            
-            // Display bids
             const bidsHtml = data.bids.map(bid => `
                 <div class="order-row bid-row">
                     <span style="color: #00ff88;">${bid.amount.toFixed(4)}</span>
@@ -1590,7 +1448,6 @@
                     <span>${bid.total.toFixed(2)}</span>
                 </div>
             `).join('');
-            
             html += asksHtml;
             html += `
                 <div class="spread-indicator">
@@ -1599,7 +1456,6 @@
                 </div>
             `;
             html += bidsHtml;
-            
             container.innerHTML = html;
         }
 
@@ -1608,15 +1464,14 @@
             const tradesContainer = document.getElementById('recentTrades');
             const cachedPrice = state.priceCache.get(state.currentSymbol);
             const basePrice = cachedPrice?.usd || 40000;
-            
-            // Generate sample trade
+
             const trade = {
                 time: new Date().toLocaleTimeString(),
                 price: (basePrice + (Math.random() - 0.5) * basePrice * 0.001).toFixed(2),
                 amount: (Math.random() * 2).toFixed(4),
                 side: Math.random() > 0.5 ? 'buy' : 'sell'
             };
-            
+
             const tradeItem = document.createElement('div');
             tradeItem.className = 'trade-item';
             tradeItem.innerHTML = `
@@ -1625,13 +1480,8 @@
                     ${trade.amount} @ ${trade.price}
                 </span>
             `;
-            
             tradesContainer.insertBefore(tradeItem, tradesContainer.firstChild);
-            
-            // Keep only last 10 trades
-            while (tradesContainer.children.length > 10) {
-                tradesContainer.removeChild(tradesContainer.lastChild);
-            }
+            while (tradesContainer.children.length > 10) tradesContainer.removeChild(tradesContainer.lastChild);
         }
 
         // ============= NEWS =============
@@ -1643,10 +1493,8 @@
                 { time: '30 min ago', title: 'Major Exchange Adds New DeFi Trading Pairs', source: 'CryptoNews' },
                 { time: '1 hour ago', title: 'Institutional Investment in Crypto Reaches New Heights', source: 'Bloomberg' }
             ];
-            
             const newsContent = document.getElementById('newsContent');
             newsContent.innerHTML = '';
-            
             sampleNews.forEach(news => {
                 const newsItem = document.createElement('div');
                 newsItem.className = 'news-item';
@@ -1661,23 +1509,20 @@
 
         // ============= EVENT LISTENERS =============
         function setupEventListeners() {
-            // Navigation
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.addEventListener('click', function() {
                     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
-            
-            // Sidebar
+
             document.querySelectorAll('.sidebar-icon').forEach(icon => {
                 icon.addEventListener('click', function() {
                     document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
-            
-            // Chart intervals
+
             document.querySelectorAll('[data-interval]').forEach(btn => {
                 btn.addEventListener('click', function() {
                     document.querySelectorAll('[data-interval]').forEach(b => b.classList.remove('active'));
@@ -1686,68 +1531,55 @@
                     updateChart();
                 });
             });
-            
-            // Order type change
+
             document.getElementById('orderType').addEventListener('change', function() {
                 const limitPriceGroup = document.getElementById('limitPriceGroup');
                 limitPriceGroup.style.display = this.value === 'limit' ? 'block' : 'none';
             });
-            
-            // Trade buttons
+
             document.getElementById('buyBtn').addEventListener('click', () => executeTrade('buy'));
             document.getElementById('sellBtn').addEventListener('click', () => executeTrade('sell'));
-            
-            // Refresh buttons
+
             document.getElementById('refreshOrderBook').addEventListener('click', loadOrderBook);
             document.getElementById('refreshWatchlist').addEventListener('click', loadWatchlist);
-            
-            // Symbol selection in trade form
+
             document.getElementById('tradeSymbol').addEventListener('change', function() {
                 selectSymbol(this.value);
             });
-            
-            // Window resize
+
             window.addEventListener('resize', () => {
                 updateChart();
             });
         }
 
-        // ============= TRADING =============
+        // ============= TRADING (SIM) =============
         function executeTrade(side) {
             const symbol = document.getElementById('tradeSymbol').value;
             const amount = parseFloat(document.getElementById('tradeAmount').value);
             const orderType = document.getElementById('orderType').value;
-            
+
             if (!amount || amount <= 0) {
                 showError('Please enter a valid amount');
                 return;
             }
-            
             if (amount > state.portfolio.totalValue) {
                 showError('Insufficient balance');
                 return;
             }
-            
-            // Simulate trade execution
+
             const trade = {
-                symbol,
-                side,
-                amount,
-                orderType,
+                symbol, side, amount, orderType,
                 timestamp: new Date().toISOString(),
                 status: 'executed'
             };
-            
+
             state.portfolio.trades.push(trade);
-            
             if (side === 'buy') {
                 state.portfolio.positions.push(trade);
                 document.getElementById('openPositions').textContent = state.portfolio.positions.length;
             }
-            
+
             showSuccess(`${side.toUpperCase()} order executed: ${amount} of ${symbol.toUpperCase()}`);
-            
-            // Update portfolio display
             updatePortfolioDisplay();
         }
 
@@ -1755,10 +1587,10 @@
             const pl = (Math.random() * 10000 - 5000);
             const plElement = document.getElementById('dailyPL');
             const plPercentElement = document.getElementById('dailyPLPercent');
-            
+
             plElement.textContent = pl >= 0 ? `+${Math.abs(pl).toFixed(2)}` : `-${Math.abs(pl).toFixed(2)}`;
             plElement.style.color = pl >= 0 ? '#00ff88' : '#ff3366';
-            
+
             const plPercent = (pl / state.portfolio.totalValue * 100).toFixed(2);
             plPercentElement.textContent = `${pl >= 0 ? '+' : ''}${plPercent}%`;
             plPercentElement.className = pl >= 0 ? 'stat-change positive' : 'stat-change negative';
@@ -1770,19 +1602,10 @@
             div.className = `status-message status-${type}`;
             div.textContent = message;
             document.body.appendChild(div);
-            
-            setTimeout(() => {
-                div.remove();
-            }, 3000);
+            setTimeout(() => { div.remove(); }, 3000);
         }
-
-        function showSuccess(message) {
-            showMessage(message, 'success');
-        }
-
-        function showError(message) {
-            showMessage(message, 'error');
-        }
+        function showSuccess(message) { showMessage(message, 'success'); }
+        function showError(message) { showMessage(message, 'error'); }
 
         // ============= DEBUGGING HELPERS =============
         window.debugTerminal = {
@@ -1802,11 +1625,162 @@
                 }
             }
         };
+    
 
-        console.log('🔧 Debug commands available:');
-        console.log('debugTerminal.getState() - View current state');
-        console.log('debugTerminal.forceRefresh() - Force data refresh');
-        console.log('debugTerminal.testConnection() - Test API connection');
-    </script>
+// ============= TAB HANDLING =============
+function switchView(view) {
+    const workspace = document.querySelector('.workspace');
+    workspace.innerHTML = '';
+
+    if (view === 'portfolio') {
+        const portfolioPanel = document.createElement('div');
+        portfolioPanel.className = 'panel';
+        portfolioPanel.innerHTML = `
+            <div class="panel-header"><span class="panel-title">Portfolio</span></div>
+            <div class="panel-content">
+                <table class="watchlist-table">
+                    <thead><tr><th>Symbol</th><th>Side</th><th>Amount</th><th>Type</th><th>Time</th></tr></thead>
+                    <tbody id="portfolioTableBody"></tbody>
+                </table>
+            </div>`;
+        workspace.appendChild(portfolioPanel);
+
+        const tbody = document.getElementById('portfolioTableBody');
+        if (state.portfolio.positions.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="5" style="color:#888;text-align:center;">No open positions</td>';
+            tbody.appendChild(row);
+        } else {
+            state.portfolio.positions.forEach(p => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.symbol.toUpperCase()}</td>
+                    <td>${p.side.toUpperCase()}</td>
+                    <td>${p.amount}</td>
+                    <td>${p.orderType}</td>
+                    <td>${new Date(p.timestamp).toLocaleTimeString()}</td>`;
+                tbody.appendChild(row);
+            });
+        }
+    } else if (view === 'analytics') {
+        const analyticsPanel = document.createElement('div');
+        analyticsPanel.className = 'panel';
+        analyticsPanel.innerHTML = `
+            <div class="panel-header"><span class="panel-title">Watchlist (Analytics)</span></div>
+            <div class="panel-content">
+                <table class="watchlist-table">
+                    <thead><tr><th>Symbol</th><th>Price</th><th>24h %</th></tr></thead>
+                    <tbody id="analyticsWatchlistBody"></tbody>
+                </table>
+            </div>`;
+        workspace.appendChild(analyticsPanel);
+
+        const tbody = document.getElementById('analyticsWatchlistBody');
+        CONFIG.WATCHLIST.forEach(symbol => {
+            const priceData = state.priceCache.get(symbol) || {};
+            const price = priceData.usd || 0;
+            const change = priceData.usd_24h_change || 0;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td style="color:#00d4ff;">${symbol.toUpperCase()}</td>
+                <td>${price.toLocaleString()}</td>
+                <td class="${change >= 0 ? 'positive' : 'negative'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</td>`;
+            tbody.appendChild(row);
+        });
+    } else if (view === 'risk') {
+        const riskPanel = document.createElement('div');
+        riskPanel.className = 'panel';
+        riskPanel.innerHTML = `
+            <div class="panel-header"><span class="panel-title">Risk Management</span></div>
+            <div class="panel-content">
+                <div class="trade-form">
+                    <div class="form-group">
+                        <label class="form-label">Account Size ($)</label>
+                        <input type="number" class="form-input" id="riskAccountSize" value="100000">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Risk per Trade (%)</label>
+                        <input type="number" class="form-input" id="riskPercent" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stop Loss (Price Difference)</label>
+                        <input type="number" class="form-input" id="stopLossPoints" value="100">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-buy" onclick="calculateRisk()">Calculate Position Size</button>
+                    </div>
+                    <div id="riskResult" style="margin-top:12px;color:#00d4ff;"></div>
+                </div>
+            </div>`;
+        workspace.appendChild(riskPanel);
+    } else {
+        const panel = document.createElement('div');
+        panel.className = 'panel';
+        panel.innerHTML = `
+            <div class="panel-header"><span class="panel-title">${view}</span></div>
+            <div class="panel-content"><p style="color:#888;">${view} view not implemented yet.</p></div>`;
+        workspace.appendChild(panel);
+    }
+}
+
+function calculateRisk() {
+    const accountSize = parseFloat(document.getElementById('riskAccountSize').value);
+    const riskPercent = parseFloat(document.getElementById('riskPercent').value);
+    const stopLoss = parseFloat(document.getElementById('stopLossPoints').value);
+
+    if (!accountSize || !riskPercent || !stopLoss) {
+        document.getElementById('riskResult').textContent = "Invalid input.";
+        return;
+    }
+
+    const riskAmount = accountSize * (riskPercent / 100);
+    const positionSize = riskAmount / stopLoss;
+    document.getElementById('riskResult').textContent = 
+        `Max risk: $${riskAmount.toFixed(2)} | Position size: ${positionSize.toFixed(2)} units.`;
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function () {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        const view = this.getAttribute('data-view');
+        if (!['markets', 'research', 'trading'].includes(view)) {
+            switchView(view);
+        }
+    });
+});
+
+function switchView(view) {
+    const workspace = document.querySelector('.workspace');
+    workspace.innerHTML = '';
+
+    const placeholder = document.createElement('div');
+    placeholder.className = 'panel';
+    placeholder.innerHTML = `
+        <div class="panel-header">
+            <span class="panel-title">${view.charAt(0).toUpperCase() + view.slice(1)}</span>
+        </div>
+        <div class="panel-content">
+            <p style="color:#888;font-size:14px;padding:10px;">${view.charAt(0).toUpperCase() + view.slice(1)} view coming soon...</p>
+        </div>
+    `;
+    workspace.appendChild(placeholder);
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function () {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        const view = this.getAttribute('data-view');
+        if (!['markets', 'research', 'trading'].includes(view)) {
+            switchView(view);
+        }
+    });
+});
+
+</script>
+
+    <!-- Backend bridge: overrides data loaders to call your Node.js API and adds CST/CDT next to UTC -->
+    <script src="/backend-bridge.js"></script>
 </body>
 </html>
